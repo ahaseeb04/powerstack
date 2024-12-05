@@ -15,7 +15,7 @@ struct ContentView: View {
                     Label("Calculator", systemImage: "align.vertical.center")
                 }
             
-            PlateCalculatorView()
+            SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
@@ -23,8 +23,6 @@ struct ContentView: View {
         .accentColor(.white)
     }
 }
-
-
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
