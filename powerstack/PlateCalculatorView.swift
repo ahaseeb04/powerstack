@@ -38,7 +38,7 @@ struct PlateCalculatorView: View {
                 Toggle(isOn: $hasCollars) {
                     Text("Collars")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(.white.opacity(0.5))
                         .textCase(.uppercase)
                 }
                 .padding()
@@ -207,7 +207,7 @@ struct BarbellView: View {
         }
     }
     
-    // Helper funcs
+    // Helper functions
     private func plateWeight(for color: String) -> Double {
         switch color {
             case "red": return 25
@@ -255,7 +255,7 @@ struct BarbellView: View {
         return platesWeight * 2 + (hasCollars ? 25 : 20)
     }
     
-    func plateDescription() -> String {
+    private func plateDescription() -> String {
         var description = [String]()
         
         for color in distribution.keys.sorted(by: { plateWeight(for: $0) > plateWeight(for: $1) }) {
