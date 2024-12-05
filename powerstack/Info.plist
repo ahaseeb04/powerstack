@@ -8,6 +8,11 @@
     </array>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>We need access to your photo library to save images.</string>
+    
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>instagram</string>
+    </array>
 </dict>
 </plist>
 

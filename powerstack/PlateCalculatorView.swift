@@ -12,7 +12,7 @@ struct PlateCalculatorView: View {
     @State private var weightInKgs: Double = 20
     @State private var distribution: [String: Int] = [:]
     @State private var hasCollars: Bool = false
-    @State private var showConfirmationPopup: Bool = false
+    @State private var showImagePreview: Bool = false
     @State private var renderedImage: UIImage?
     
     var body: some View {
@@ -71,11 +71,20 @@ struct PlateCalculatorView: View {
                                 .font(.footnote)
                                 .bold()
                         }
-                        .frame(maxWidth: 175, alignment: .center)
+                        .frame(maxWidth: 160, alignment: .center)
                     }
                     .buttonStyle(.bordered)
                     .cornerRadius(10)
                     .padding(.bottom, 50)
+                    .sheet(isPresented: Binding(
+                        get: { renderedImage != nil },
+                        set: { if !$0 { renderedImage = nil } }
+                    )) {
+                        if let renderedImage = renderedImage {
+                            ImagePreviewSheet(image: renderedImage)
+                                .presentationDetents([.fraction(0.7)])
+                        }
+                    }
                 }
             }
         }
@@ -101,11 +110,12 @@ struct PlateCalculatorView: View {
         }
 
         renderedImage = image
-        showConfirmationPopup = true
-    }
-    
-    func saveToCameraRoll(_ image: UIImage) {
-        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+        
+        DispatchQueue.main.async {
+            if renderedImage != nil {
+                showImagePreview = true
+            }
+        }
     }
     
     func updateDistribution() {
@@ -128,6 +138,58 @@ struct PlateCalculatorView: View {
             remainingWeight -= Double(count) * (plate.0 * 2)
             if count > 0 { result[plate.1] = count }
         }
+    }
+}
+
+struct ImagePreviewSheet: View {
+    var image: UIImage?
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.9).edgesIgnoringSafeArea(.all)
+            
+            VStack {
+                Image(uiImage: image!)
+                    .resizable()
+                    .scaledToFit()
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding()
+                
+                HStack(spacing: 15) {
+                    Button(action: saveImage) {
+                        Text("Save")
+                            .foregroundColor(.white)
+                            .font(.subheadline)
+                            .bold()
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.gray.opacity(0.2))
+                            .cornerRadius(10)
+                    }
+                    
+                    Button(action: cancel) {
+                        Text("Cancel")
+                            .foregroundColor(.white)
+                            .font(.subheadline)
+                            .bold()
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.gray.opacity(0.2))
+                            .cornerRadius(10)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+    
+    private func saveImage() {
+        UIImageWriteToSavedPhotosAlbum(image!, nil, nil, nil)
+    }
+    
+    private func cancel() {
+        dismiss()
     }
 }
 

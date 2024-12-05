@@ -28,6 +28,20 @@ struct SettingsView: View {
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
                     .foregroundColor(.white)
+                    
+//                    Section() {
+//                        Button(action: { openInstagramProfile(username: "abdul.h83") }) {
+//                            HStack {
+//                                Image(systemName: "link")
+//                                    .foregroundColor(.white)
+//                                
+//                                Text("Follow me on Instagram")
+//                                    .foregroundColor(.white)
+//                            }
+//                        }
+//                    }
+//                    .listRowBackground(Color.gray.opacity(0.2))
+//                    .foregroundColor(.white)
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.black)
@@ -36,5 +50,12 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    func openInstagramProfile(username: String) {
+        let appUrl = URL(string: "instagram://user?username=\(username)")!
+        let webUrl = URL(string: "https://www.instagram.com/\(username)")!
+        
+        UIApplication.shared.open(UIApplication.shared.canOpenURL(appUrl) ? appUrl : webUrl);
     }
 }
