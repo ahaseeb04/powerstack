@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var hideSaveButton: Bool = SettingsManager.shouldHideSaveButton()
+    @State private var disableImagePreview: Bool = SettingsManager.shouldDisableImagePreview()
 
     var body: some View {
         ZStack {
@@ -17,13 +18,21 @@ struct SettingsView: View {
 
             VStack {
                 Form {
-                    Section() {
+                    Section(header: Text("Save to Camera Roll")) {
                         Toggle(isOn: $hideSaveButton) {
                             Text("Hide Save to Camera Roll Button")
                                 .foregroundColor(.white)
                         }
                         .onChange(of: hideSaveButton) {
                             SettingsManager.setHideSaveButton(hideSaveButton)
+                        }
+                        
+                        Toggle(isOn: $disableImagePreview) {
+                            Text("Disable Image Preview")
+                                .foregroundColor(.white)
+                        }
+                        .onChange(of: disableImagePreview) {
+                            SettingsManager.setDisableImagePreview(disableImagePreview)
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))

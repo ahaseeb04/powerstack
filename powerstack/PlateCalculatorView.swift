@@ -12,8 +12,8 @@ struct PlateCalculatorView: View {
     @State private var weightInKgs: Double = 20
     @State private var distribution: [String: Int] = [:]
     @State private var hasCollars: Bool = false
-    @State private var showImagePreview: Bool = false
     @State private var renderedImage: UIImage?
+    @State private var saveSuccess: Bool = false
     
     var body: some View {
         ZStack {
@@ -63,26 +63,66 @@ struct PlateCalculatorView: View {
                 VStack {
                     Spacer()
                     
-                    Button(action: generatePreview) {
-                        HStack {
-                            Image(systemName: "arrow.down.circle")
-                                .font(.title2)
-                            Text("Save to Camera Roll")
-                                .font(.footnote)
-                                .bold()
+                    if SettingsManager.shouldDisableImagePreview() {
+                        Button(action: {
+                            generatePreview()
+                            saveImage()
+                            saveSuccess = true
+                        }) {
+                            HStack {
+                                if saveSuccess {
+                                    Image(systemName: "checkmark.circle")
+                                        .font(.title2)
+                                        .foregroundColor(.green)
+                                    Text("Image Saved")
+                                        .font(.footnote)
+                                        .bold()
+                                        .foregroundColor(.green)
+                                } else {
+                                    Image(systemName: "arrow.down.circle")
+                                        .font(.title2)
+                                    Text("Save to Camera Roll")
+                                        .font(.footnote)
+                                        .bold()
+                                }
+                            }
+                            .frame(maxWidth: saveSuccess ? 125 : 170, alignment: .center)
                         }
-                        .frame(maxWidth: 160, alignment: .center)
-                    }
-                    .buttonStyle(.bordered)
-                    .cornerRadius(10)
-                    .padding(.bottom, 50)
-                    .sheet(isPresented: Binding(
-                        get: { renderedImage != nil },
-                        set: { if !$0 { renderedImage = nil } }
-                    )) {
-                        if let renderedImage = renderedImage {
-                            ImagePreviewSheet(image: renderedImage)
-                                .presentationDetents([.fraction(0.7)])
+                        .disabled(saveSuccess)
+                        .buttonStyle(.bordered)
+                        .cornerRadius(10)
+                        .padding(.bottom, 50)
+                    } else {
+                        Button(action: generatePreview) {
+                            HStack {
+                                if saveSuccess {
+                                    Image(systemName: "checkmark.circle")
+                                        .font(.title2)
+                                        .foregroundColor(.green)
+                                    Text("Image Saved")
+                                        .font(.footnote)
+                                        .bold()
+                                        .foregroundColor(.green)
+                                } else {
+                                    Image(systemName: "arrow.down.circle")
+                                        .font(.title2)
+                                    Text("Save to Camera Roll")
+                                        .font(.footnote)
+                                        .bold()
+                                }
+                            }
+                            .frame(maxWidth: saveSuccess ? 125 : 170, alignment: .center)
+                        }
+                        .disabled(saveSuccess)
+                        .buttonStyle(.bordered)
+                        .cornerRadius(10)
+                        .padding(.bottom, 50)
+                        .sheet(isPresented: Binding(
+                            get: { renderedImage != nil },
+                            set: { if !$0 { renderedImage = nil } }
+                        )) {
+                            ImagePreviewSheet(image: renderedImage, onSave: { saveSuccess = true })
+                                .presentationDetents([.fraction(0.65)])
                         }
                     }
                 }
@@ -110,16 +150,15 @@ struct PlateCalculatorView: View {
         }
 
         renderedImage = image
-        
-        DispatchQueue.main.async {
-            if renderedImage != nil {
-                showImagePreview = true
-            }
-        }
+    }
+    
+    private func saveImage() {
+        UIImageWriteToSavedPhotosAlbum(renderedImage!, nil, nil, nil)
     }
     
     func updateDistribution() {
         if let weight = Double(userInput), weight > 0 {
+            saveSuccess = false
             weightInKgs = min(round((weight / 2.2046) / 2.5) * 2.5, 1000)
             distribution = barbellDistribution(weight: weightInKgs, bar: hasCollars ? 25 : 20)
         }
@@ -144,6 +183,8 @@ struct PlateCalculatorView: View {
 struct ImagePreviewSheet: View {
     var image: UIImage?
     @Environment(\.dismiss) private var dismiss
+    
+    var onSave: (() -> Void)?
     
     var body: some View {
         ZStack {
@@ -186,6 +227,9 @@ struct ImagePreviewSheet: View {
     
     private func saveImage() {
         UIImageWriteToSavedPhotosAlbum(image!, nil, nil, nil)
+        
+        onSave?()
+        dismiss()
     }
     
     private func cancel() {
@@ -331,7 +375,6 @@ struct BarbellView: View {
         return description.joined(separator: ", ")
     }
 }
-
 
 extension String {
     var color: Color {
