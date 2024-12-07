@@ -128,6 +128,8 @@ struct PlateCalculatorView: View {
                 }
             }
         }
+        .dismissKeyboardOnTap()
+        .ignoresSafeArea(.keyboard)
     }
     
     func generatePreview() {

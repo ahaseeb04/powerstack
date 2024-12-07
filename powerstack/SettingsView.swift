@@ -28,7 +28,7 @@ struct SettingsView: View {
                         }
                         
                         Toggle(isOn: $disableImagePreview) {
-                            Text("Disable Image Preview")
+                            Text("Disable 2-Step Confirmation")
                                 .foregroundColor(.white)
                         }
                         .onChange(of: disableImagePreview) {
