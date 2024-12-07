@@ -190,7 +190,7 @@ struct ImagePreviewSheet: View {
     
     var body: some View {
         ZStack {
-            Color.black.opacity(0.9).edgesIgnoringSafeArea(.all)
+            Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
             
             VStack {
                 Image(uiImage: image!)
@@ -249,13 +249,14 @@ struct BarbellView: View {
             // Barbell
             Rectangle()
                 .fill(Color.gray)
-                .frame(width: 150, height: 15)
+                .frame(width: 150, height: 12)
                 .offset(x: -150)
             
             Rectangle()
                 .fill(Color.gray)
-                .frame(width: 150, height: 15)
+                .frame(width: 150, height: 12)
                 .offset(x: 0)
+                .cornerRadius(3, corners: [.topRight, .bottomRight])
             
             // Plates
             HStack(spacing: 0) {
@@ -331,8 +332,8 @@ struct BarbellView: View {
     
     private func plateWidth(for color: String) -> CGFloat {
         switch color {
-            case "red", "blue", "yellow", "green", "white": return 10
-            case "black": return 8
+            case "red", "blue", "yellow", "green", "white": return 8
+            case "black": return 6
             case "silver": return 4
             default: return 0
         }

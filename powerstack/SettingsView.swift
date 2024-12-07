@@ -40,13 +40,8 @@ struct SettingsView: View {
                     
 //                    Section() {
 //                        Button(action: { openInstagramProfile(username: "abdul.h83") }) {
-//                            HStack {
-//                                Image(systemName: "link")
-//                                    .foregroundColor(.white)
-//                                
-//                                Text("Follow me on Instagram")
-//                                    .foregroundColor(.white)
-//                            }
+//                            Text("Follow me on Instagram")
+//                                .foregroundColor(.white)
 //                        }
 //                    }
 //                    .listRowBackground(Color.gray.opacity(0.2))
