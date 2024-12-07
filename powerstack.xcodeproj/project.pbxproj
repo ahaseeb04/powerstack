@@ -29,9 +29,22 @@
 		88908FA12CFD4E9800FC8410 /* powerstackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = powerstackUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8812F5262D0130E200F20B36 /* Exceptions for "powerstack" folder in "powerstack" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 88908F862CFD4E9700FC8410 /* powerstack */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		88908F892CFD4E9700FC8410 /* powerstack */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8812F5262D0130E200F20B36 /* Exceptions for "powerstack" folder in "powerstack" target */,
+			);
 			path = powerstack;
 			sourceTree = "<group>";
 		};
@@ -400,6 +413,7 @@
 				DEVELOPMENT_TEAM = FWCSM97863;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = powerstack/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PowerStack;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -434,6 +448,7 @@
 				DEVELOPMENT_TEAM = FWCSM97863;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = powerstack/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PowerStack;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
