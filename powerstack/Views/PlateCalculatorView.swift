@@ -20,17 +20,12 @@ struct PlateCalculatorView: View {
             Color.black.ignoresSafeArea()
             
             VStack {
-                Spacer()
-                
                 TextField("Enter weight in lbs", text: $userInput)
                     .keyboardType(.numberPad)
                     .padding()
                     .background(Color.gray.opacity(0.2))
                     .foregroundColor(.white)
-                    .fontWeight(.medium)
                     .cornerRadius(10)
-                    .padding(.top, -325)
-                    .padding(.horizontal, 20)
                     .onChange(of: userInput) {
                         updateDistribution()
                     }
@@ -41,15 +36,15 @@ struct PlateCalculatorView: View {
                         .foregroundColor(.white.opacity(0.5))
                         .textCase(.uppercase)
                 }
-                .padding()
-                .padding(.top, -275)
-                .padding(.horizontal, 5)
+                .padding(.top, 15)
                 .onChange(of: hasCollars) {
                     updateDistribution()
                 }
                 
                 Spacer()
             }
+            .padding(.horizontal, 30)
+            .padding(.vertical, 30)
             
             VStack {
                 Spacer()
