@@ -32,6 +32,7 @@ struct ContentView: View {
                 .tag(2)
         }
         .accentColor(.white)
+        .environment(\.colorScheme, .dark)
     }
 }
 
