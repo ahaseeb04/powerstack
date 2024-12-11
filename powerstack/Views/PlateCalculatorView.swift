@@ -64,7 +64,7 @@ struct PlateCalculatorView: View {
                 Spacer()
                 
                 if usePounds {
-                    BarbellViewPounds(distribution: distribution, hasCollars: false, showDescription: true)
+                    BarbellViewPounds(distribution: distribution, showDescription: true)
                 } else {
                     BarbellView(distribution: distribution, hasCollars: hasCollars, showDescription: true)
                 }
@@ -147,7 +147,7 @@ struct PlateCalculatorView: View {
     
     func generatePreview() {
         let view: AnyView = usePounds
-            ? AnyView(BarbellViewPounds(distribution: distribution, hasCollars: false, showDescription: false))
+            ? AnyView(BarbellViewPounds(distribution: distribution, showDescription: false))
             : AnyView(BarbellView(distribution: distribution, hasCollars: hasCollars, showDescription: false))
         
         let hostingController = UIHostingController(rootView: view.background(Color.black))
@@ -423,7 +423,6 @@ struct BarbellView: View {
 
 struct BarbellViewPounds: View {
     var distribution: [String: Int]
-    var hasCollars: Bool
     var showDescription: Bool
     
     var body: some View {
