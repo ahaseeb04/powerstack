@@ -9,7 +9,7 @@ import SwiftUI
 import Combine
 
 struct OpenPowerliftingSearchView: View {
-    @StateObject private var viewModel = LifterViewModel()
+    @StateObject public var viewModel = LifterViewModel()
     @State private var lifterName: String = ""
     @State private var debounceTimer: Timer? = nil
     
@@ -20,7 +20,12 @@ struct OpenPowerliftingSearchView: View {
             ScrollView {
                 VStack {
                     searchTextField
-                    lifterCompetitionsView
+                    
+                    if viewModel.resourceFound {
+                        lifterPersonalBestsView
+                        lifterCompetitionsView
+                    }
+                    
                     Spacer()
                 }
             }
@@ -49,11 +54,88 @@ struct OpenPowerliftingSearchView: View {
                 }
             }
     }
+    
+    private var lifterPersonalBestsView: some View {
+        Group {
+            if let lifter = viewModel.lifters.first {
+                VStack(spacing: 10) {
+                    Text("Personal Bests")
+                        .font(.system(size: 24))
+                        .bold()
+                        .foregroundColor(.white)
+                        .padding()
+                    
+                    HStack {
+                        Spacer()
+                        VStack {
+                            Text("Squat")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text(String(format: "%.1f", lifter.personalBests.squat).replacingOccurrences(of: ".0", with: ""))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Spacer()
+                        VStack {
+                            Text("Bench")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text(String(format: "%.1f", lifter.personalBests.bench).replacingOccurrences(of: ".0", with: ""))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Spacer()
+                        VStack {
+                            Text("Deadlift")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text(String(format: "%.1f", lifter.personalBests.deadlift).replacingOccurrences(of: ".0", with: ""))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Spacer()
+                        VStack {
+                            Text("Total")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text(String(format: "%.1f", lifter.personalBests.total).replacingOccurrences(of: ".0", with: ""))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Spacer()
+                        VStack {
+                            Text("Dots")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text(String(lifter.personalBests.dots))
+                                .foregroundColor(.white)
+                        }
+                        Spacer()
+                    }
+                    .padding()
+                    .background(Color.black)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                    )
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                }
+            }
+        }
+    }
+
 
     private var lifterCompetitionsView: some View {
         Group {
             if let lifter = viewModel.lifters.first {
                 VStack(spacing: 10) {
+                    Text("Competition Results")
+                        .font(.system(size: 24))
+                        .bold()
+                        .foregroundColor(.white)
+                        .padding()
+                    
                     ForEach(lifter.competitions) { competition in
                         competitionView(for: competition)
                     }
@@ -79,33 +161,29 @@ struct OpenPowerliftingSearchView: View {
                     Divider()
                         .background(Color.gray)
                     
-                    let squatAttemptsString = formattedAttempts(for: competition.squatAttempts)
-                    let benchAttemptsString = formattedAttempts(for: competition.benchAttempts)
-                    let deadliftAttemptsString = formattedAttempts(for: competition.deadliftAttempts)
+                    let squatAttempts = formattedAttempts(for: competition.squatAttempts)
+                    let benchAttempts = formattedAttempts(for: competition.benchAttempts)
+                    let deadliftAttempts = formattedAttempts(for: competition.deadliftAttempts)
                     
-                    Text("S: \(squatAttemptsString)")
+                    Text("S: \(squatAttempts)")
                         .font(.body)
                         .foregroundColor(.white)
                     
-                    Text("B: \(benchAttemptsString)")
+                    Text("B: \(benchAttempts)")
                         .font(.body)
                         .foregroundColor(.white)
                     
-                    Text("D: \(deadliftAttemptsString)")
+                    Text("D: \(deadliftAttempts)")
                         .font(.body)
                         .foregroundColor(.white)
                 }
                 .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(LinearGradient(
-                            gradient: Gradient(colors: [Color.gray.opacity(0.1), Color.gray.opacity(0.3)]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
-                        .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 4)
+                .background(Color.black)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
                 )
-                .padding()
+                .cornerRadius(10)
             }
         }
     }
@@ -156,6 +234,7 @@ struct OpenPowerliftingSearchView: View {
 class LifterViewModel: ObservableObject {
     @Published var lifters: [Lifter] = []
     @Published var errorMessage: String? = nil
+    @Published var resourceFound: Bool = false
     
     func fetchLifters(for lifterName: String) {
         let formattedName = lifterName.replacingOccurrences(of: " ", with: "").lowercased()
@@ -172,6 +251,12 @@ class LifterViewModel: ObservableObject {
                 }
                 
                 return
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                DispatchQueue.main.async {
+                    self.resourceFound = httpResponse.statusCode != 404
+                }
             }
             
             guard let data = data, let csvString = String(data: data, encoding: .utf8) else {
@@ -223,7 +308,7 @@ class LifterViewModel: ObservableObject {
         let bestBenchIndex = headers.firstIndex(of: "Best3BenchKg") ?? 21
         let bestDeadliftIndex = headers.firstIndex(of: "Best3DeadliftKg") ?? 22
         
-        var parsedCompetitions: [Competition] = []
+        var competitions: [Competition] = []
         var personalBests: (squat: Double, bench: Double, deadlift: Double, total: Double, dots: Double) = (0.0, 0.0, 0.0, 0.0, 0.0)
         
         for row in rows.dropFirst() {
@@ -293,10 +378,10 @@ class LifterViewModel: ObservableObject {
                 dots: dots
             )
             
-            parsedCompetitions.append(competition)
+            competitions.append(competition)
         }
         
-        let lifter = Lifter(name: rows.dropFirst().first?.components(separatedBy: ",")[nameIndex] ?? "Unknown", personalBests: personalBests, competitions: parsedCompetitions)
+        let lifter = Lifter(name: rows.dropFirst().first?.components(separatedBy: ",")[nameIndex] ?? "Unknown", personalBests: personalBests, competitions: competitions)
         
         DispatchQueue.main.async {
             self.lifters = [lifter]
