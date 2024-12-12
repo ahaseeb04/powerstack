@@ -1,5 +1,5 @@
 //
-//  OpenPowerliftingSearch.swift
+//  OpenPowerliftingSearchView.swift
 //  powerstack
 //
 //  Created by Abdul Haseeb on 2024-12-08.
@@ -68,7 +68,7 @@ struct OpenPowerliftingSearchView: View {
     private func competitionView(for competition: Competition) -> some View {
         ZStack {
             HStack(spacing: 0) {
-                Text(String(competition.placing))
+                Text(ordinal(of: competition.placing))
                     .frame(width: 30, alignment: .leading)
                     .padding(.horizontal, 10)
                 
@@ -143,7 +143,25 @@ struct OpenPowerliftingSearchView: View {
             .cornerRadius(10)
         }
     }
-
+    
+    private func ordinal(of number: Int) -> String {
+        let suffix: String
+        let tens = number % 100
+        let units = number % 10
+        
+        if (11...13).contains(tens) {
+            suffix = "th"
+        } else {
+            switch units {
+            case 1: suffix = "st"
+            case 2: suffix = "nd"
+            case 3: suffix = "rd"
+            default: suffix = "th"
+            }
+        }
+        
+        return "\(number)\(suffix)"
+    }
 }
 
 
