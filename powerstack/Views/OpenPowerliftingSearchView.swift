@@ -55,9 +55,7 @@ struct OpenPowerliftingSearchView: View {
             if let lifter = viewModel.lifters.first {
                 VStack(spacing: 10) {
                     ForEach(lifter.competitions) { competition in
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            competitionView(for: competition)
-                        }
+                        competitionView(for: competition)
                     }
                 }
                 .padding()
@@ -67,80 +65,48 @@ struct OpenPowerliftingSearchView: View {
     
     private func competitionView(for competition: Competition) -> some View {
         ZStack {
-            HStack(spacing: 0) {
-                Text(ordinal(of: competition.placing))
-                    .frame(width: 30, alignment: .leading)
-                    .padding(.horizontal, 10)
-                
-                Text(competition.federation)
-                    .frame(width: 50, alignment: .leading)
-                    .padding(.horizontal, 10)
-                
-                Text(competition.date)
-                    .frame(width: 100, alignment: .leading)
-                    .padding(.horizontal, 10)
-                
-                Text(competition.competitionName)
-                    .frame(width: 225, alignment: .leading)
-                    .padding(.horizontal, 10)
-                
-                Text(competition.division)
-                    .frame(width: 80, alignment: .leading)
-                    .padding(.horizontal, 10)
-                
-                Text(competition.equipment)
-                    .frame(width: 80, alignment: .leading)
-                    .padding(.horizontal, 10)
-                
-                Text(competition.weightClass)
-                    .frame(width: 60, alignment: .leading)
-                    .padding(.horizontal, 10)
-                
-                Text(String(competition.bodyweight))
-                    .frame(width: 60, alignment: .leading)
-                    .padding(.horizontal, 10)
-                
-                ForEach(competition.squatAttempts, id: \.self) { attempt in
-                    let nonOptionalAttempt = attempt ?? 0.0
+            VStack {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(competition.competitionName)
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+
+                    Text("\(String(format: "%.1f", competition.total).replacingOccurrences(of: ".0", with: "")) @ \(String(format: "%.2f", competition.bodyweight)), \(ordinal(of: competition.placing)) Place \(getPlaceEmoji(for: competition.placing))")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+
+                    Divider()
+                        .background(Color.gray)
                     
-                    Text(String(nonOptionalAttempt).replacingOccurrences(of: ".0", with: ""))
-                        .frame(width: 60, alignment: .leading)
-                        .padding(.horizontal, 5)
-                        .fontWeight(.semibold)
+                    let squatAttemptsString = formattedAttempts(for: competition.squatAttempts)
+                    let benchAttemptsString = formattedAttempts(for: competition.benchAttempts)
+                    let deadliftAttemptsString = formattedAttempts(for: competition.deadliftAttempts)
+                    
+                    Text("S: \(squatAttemptsString)")
+                        .font(.body)
+                        .foregroundColor(.white)
+                    
+                    Text("B: \(benchAttemptsString)")
+                        .font(.body)
+                        .foregroundColor(.white)
+                    
+                    Text("D: \(deadliftAttemptsString)")
+                        .font(.body)
                         .foregroundColor(.white)
                 }
-                
-                ForEach(competition.benchAttempts, id: \.self) { attempt in
-                    let nonOptionalAttempt = attempt ?? 0.0
-                    
-                    Text(String(nonOptionalAttempt).replacingOccurrences(of: ".0", with: ""))
-                        .frame(width: 60, alignment: .leading)
-                        .padding(.horizontal, 5)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                }
-                
-                ForEach(competition.deadliftAttempts, id: \.self) { attempt in
-                    let nonOptionalAttempt = attempt ?? 0.0
-                    
-                    Text(String(nonOptionalAttempt).replacingOccurrences(of: ".0", with: ""))
-                        .frame(width: 60, alignment: .leading)
-                        .padding(.horizontal, 5)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                }
-                
-                Text(String(competition.total))
-                    .frame(width: 60, alignment: .leading)
-                    .padding(.horizontal, 10)
-                
-                Text(String(competition.dots))
-                    .frame(width: 70, alignment: .leading)
-                    .padding(.horizontal, 10)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(LinearGradient(
+                            gradient: Gradient(colors: [Color.gray.opacity(0.1), Color.gray.opacity(0.3)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
+                        .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 4)
+                )
+                .padding()
             }
-            .padding()
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(10)
         }
     }
     
@@ -161,6 +127,28 @@ struct OpenPowerliftingSearchView: View {
         }
         
         return "\(number)\(suffix)"
+    }
+    
+    private func getPlaceEmoji(for place: Int) -> String {
+        switch place {
+        case 1: return "🥇"
+        case 2: return "🥈"
+        case 3: return "🥉"
+        default: return ""
+        }
+    }
+    
+    private func formattedAttempts(for attempts: [Double?]) -> String {
+        return attempts.compactMap { attempt -> String? in
+            guard let attemptValue = attempt else { return nil }
+            
+            var formattedAttempt = String(format: "%.1f", attemptValue).replacingOccurrences(of: ".0", with: "")
+            
+            if formattedAttempt.hasPrefix("-") {
+                formattedAttempt = formattedAttempt.replacingOccurrences(of: "-", with: "") + "x"
+            }
+            return formattedAttempt
+        }.joined(separator: "/")
     }
 }
 
@@ -217,7 +205,7 @@ class LifterViewModel: ObservableObject {
         let divisionIndex = headers.firstIndex(of: "Division") ?? 3
         let equipmentIndex = headers.firstIndex(of: "Equipment") ?? 4
         let weightClassIndex = headers.firstIndex(of: "WeightClassKg") ?? 5
-        let bodyWeightIndex = headers.firstIndex(of: "BodyweightKg") ?? 6
+        let bodyweightIndex = headers.firstIndex(of: "BodyweightKg") ?? 6
         let squat1Index = headers.firstIndex(of: "Squat1Kg") ?? 7
         let squat2Index = headers.firstIndex(of: "Squat2Kg") ?? 8
         let squat3Index = headers.firstIndex(of: "Squat3Kg") ?? 9
@@ -290,19 +278,19 @@ class LifterViewModel: ObservableObject {
             )
             
             let competition = Competition(
+                placing: Int(columns[placingIndex]) ?? 0,
                 federation: columns[federationIndex],
+                date: columns[dateIndex],
                 competitionName: columns[competitionNameIndex],
                 division: columns[divisionIndex],
                 equipment: columns[equipmentIndex],
                 weightClass: columns[weightClassIndex],
-                bodyweight: Double(columns[bodyWeightIndex]) ?? 0.0,
+                bodyweight: Double(columns[bodyweightIndex]) ?? 0.0,
                 squatAttempts: squatAttempts,
                 benchAttempts: benchAttempts,
                 deadliftAttempts: deadliftAttempts,
                 total: total,
-                dots: dots,
-                placing: Int(columns[placingIndex]) ?? 0,
-                date: columns[dateIndex]
+                dots: dots
             )
             
             parsedCompetitions.append(competition)
@@ -325,7 +313,9 @@ struct Lifter: Identifiable {
 
 struct Competition: Identifiable {
     let id = UUID()
+    let placing: Int
     let federation: String
+    let date: String
     let competitionName: String
     let division: String
     let equipment: String
@@ -336,6 +326,4 @@ struct Competition: Identifiable {
     let deadliftAttempts: [Double?]
     let total: Double
     let dots: Double
-    let placing: Int
-    let date: String
 }
