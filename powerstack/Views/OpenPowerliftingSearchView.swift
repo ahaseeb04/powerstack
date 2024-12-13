@@ -13,9 +13,9 @@ import FirebaseFirestore
 struct OpenPowerliftingSearchView: View {
     @StateObject public var viewModel = LifterViewModel()
     @State private var debounceTimer: Timer? = nil
-    
     @State private var lifterName: String = ""
-    @State private var prediction: String = ""
+    @State private var filteredSuggestions: [String] = []
+    @State private var suggestion: String? = ""
     
     var body: some View {
         ZStack {
@@ -41,22 +41,40 @@ struct OpenPowerliftingSearchView: View {
                 Text("OpenPowerlifting Search")
             }
         }
+        .onAppear {
+            viewModel.fetchSuggestions()
+        }
     }
 
     private var searchTextField: some View {
-        TextField("Enter lifter name", text: $lifterName)
-            .padding()
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(10)
-            .padding(.horizontal)
-            .disableAutocorrection(true)
-            .onChange(of: lifterName) {
-                debounceTimer?.invalidate()
-                
-                debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
-                    viewModel.fetchLifters(for: lifterName)
-                }
+        ZStack(alignment: .leading) {
+                TextField("", text: $lifterName)
+                    .padding()
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                    .disableAutocorrection(true)
+                    .onChange(of: lifterName) {
+                        filterSuggestions()
+                    }
+                    .overlay(
+                        Group {
+                            if let suggestion = suggestion {
+                                Text(suggestion.dropFirst(lifterName.count))
+                                    .foregroundColor(Color.gray.opacity(0.5))
+                                    .offset(x: calculateCursorPosition(for: lifterName))
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                    )
             }
+    }
+    
+    private func calculateCursorPosition(for text: String) -> CGFloat {
+        let fontSize: CGFloat = 16
+        let letterSpacing: CGFloat = 1
+        let textWidth = CGFloat(text.count) * (fontSize * 0.6 + letterSpacing)
+        return textWidth
     }
     
     private var lifterPersonalBestsView: some View {
@@ -232,6 +250,17 @@ struct OpenPowerliftingSearchView: View {
             return formattedAttempt
         }.joined(separator: "/")
     }
+    
+    private func filterSuggestions() {
+        if lifterName.count < 3 {
+            suggestion = ""
+            return
+        }
+        
+        filteredSuggestions = viewModel.suggestions.filter { $0.lowercased().hasPrefix(lifterName.lowercased()) }
+        
+        suggestion = filteredSuggestions.first ?? ""
+    }
 }
 
 
@@ -239,8 +268,19 @@ class LifterViewModel: ObservableObject {
     @Published var lifters: [Lifter] = []
     @Published var errorMessage: String? = nil
     @Published var resourceFound: Bool = false
+    @Published var suggestions: [String] = []
     
-    public var db = Firestore.firestore()
+    private var db = Firestore.firestore()
+    
+    func fetchSuggestions() {
+        db.collection("lifters").getDocuments { snapshot, error in
+            if let error = error {
+                return
+            }
+            
+            self.suggestions = snapshot?.documents.compactMap { $0.documentID } ?? []
+        }
+    }
     
     func fetchLifters(for lifterName: String) {
         guard !lifterName.isEmpty else {
