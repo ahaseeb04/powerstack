@@ -7,11 +7,15 @@
 
 import SwiftUI
 import Combine
+import Foundation
+import FirebaseFirestore
 
 struct OpenPowerliftingSearchView: View {
     @StateObject public var viewModel = LifterViewModel()
-    @State private var lifterName: String = ""
     @State private var debounceTimer: Timer? = nil
+    
+    @State private var lifterName: String = ""
+    @State private var prediction: String = ""
     
     var body: some View {
         ZStack {
@@ -236,7 +240,14 @@ class LifterViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     @Published var resourceFound: Bool = false
     
+    public var db = Firestore.firestore()
+    
     func fetchLifters(for lifterName: String) {
+        guard !lifterName.isEmpty else {
+            self.resourceFound = false
+            return
+        }
+        
         let formattedName = lifterName.replacingOccurrences(of: " ", with: "").lowercased()
         
         guard let url = URL(string: "https://www.openpowerlifting.org/api/liftercsv/\(formattedName)") else {
@@ -244,6 +255,39 @@ class LifterViewModel: ObservableObject {
             return
         }
         
+        db.collection("lifters").document(lifterName).getDocument { document, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Firestore error: \(error.localizedDescription)"
+                }
+                
+                return
+            }
+            
+            if let document = document, document.exists {
+                if let timestamp = document.get("timestamp") as? Timestamp {
+                    let currentTime = Date()
+                    let timeElapsed = currentTime.timeIntervalSince(timestamp.dateValue())
+                    
+                    if timeElapsed > 86400 {
+                        self.fetchAndParseCsv(from: url)
+                    } else {
+                        if let lifterData = try? document.data(as: LifterData.self) {
+                            self.lifters = [lifterData.lifter]
+                            
+                            DispatchQueue.main.async {
+                                self.resourceFound = true
+                            }
+                        }
+                    }
+                }
+            } else {
+                self.fetchAndParseCsv(from: url)
+            }
+        }
+    }
+    
+    func fetchAndParseCsv(from url: URL) {
         URLSession.shared.dataTask(with: url) { data, response, error in
             if let error = error {
                 DispatchQueue.main.async {
@@ -256,6 +300,10 @@ class LifterViewModel: ObservableObject {
             if let httpResponse = response as? HTTPURLResponse {
                 DispatchQueue.main.async {
                     self.resourceFound = httpResponse.statusCode == 200
+                }
+                
+                if httpResponse.statusCode == 404 {
+                    return
                 }
             }
             
@@ -309,7 +357,7 @@ class LifterViewModel: ObservableObject {
         let bestDeadliftIndex = headers.firstIndex(of: "Best3DeadliftKg") ?? 22
         
         var competitions: [Competition] = []
-        var personalBests: (squat: Double, bench: Double, deadlift: Double, total: Double, dots: Double) = (0.0, 0.0, 0.0, 0.0, 0.0)
+        var personalBests = PersonalBests(squat: 0.0, bench: 0.0, deadlift: 0.0, total: 0.0, dots: 0.0)
         
         for row in rows.dropFirst() {
             let columns = row.components(separatedBy: ",")
@@ -354,12 +402,12 @@ class LifterViewModel: ObservableObject {
             let total = Double(columns[totalIndex]) ?? 0.0
             let dots = Double(columns[dotsIndex]) ?? 0.0
             
-            personalBests = (
-                max(personalBests.squat, squatAttempts.compactMap{ $0 }.max() ?? 0.0),
-                max(personalBests.bench, benchAttempts.compactMap{ $0 }.max() ?? 0.0),
-                max(personalBests.deadlift, deadliftAttempts.compactMap{ $0 }.max() ?? 0.0),
-                max(personalBests.total, total),
-                max(personalBests.dots, dots)
+            personalBests = PersonalBests(
+                squat: max(personalBests.squat, squatAttempts.compactMap{ $0 }.max() ?? 0.0),
+                bench: max(personalBests.bench, benchAttempts.compactMap{ $0 }.max() ?? 0.0),
+                deadlift: max(personalBests.deadlift, deadliftAttempts.compactMap{ $0 }.max() ?? 0.0),
+                total: max(personalBests.total, total),
+                dots: max(personalBests.dots, dots)
             )
             
             let competition = Competition(
@@ -383,21 +431,36 @@ class LifterViewModel: ObservableObject {
         
         let lifter = Lifter(name: rows.dropFirst().first?.components(separatedBy: ",")[nameIndex] ?? "Unknown", personalBests: personalBests, competitions: competitions)
         
-        DispatchQueue.main.async {
-            self.lifters = [lifter]
+        let lifterData = LifterData(lifter: lifter, timestamp: Date())
+        
+        do {
+            try db.collection("lifters").document(lifter.name).setData(from: lifterData)
+            
+            DispatchQueue.main.async {
+                self.lifters = [lifter]
+            }
+        } catch {
+            DispatchQueue.main.async {
+                self.errorMessage = "Error saving data to Firestore: \(error.localizedDescription)"
+            }
         }
     }
 }
 
-struct Lifter: Identifiable {
-    let id = UUID()
+struct LifterData: Codable {
+    let lifter: Lifter
+    let timestamp: Date
+}
+
+struct Lifter: Identifiable, Codable {
+    var id = UUID()
     let name: String
-    let personalBests: (squat: Double, bench: Double, deadlift: Double, total: Double, dots: Double)
+    let personalBests: PersonalBests
     let competitions: [Competition]
 }
 
-struct Competition: Identifiable {
-    let id = UUID()
+struct Competition: Identifiable, Codable {
+    var id = UUID()
     let placing: Int
     let federation: String
     let date: String
@@ -409,6 +472,14 @@ struct Competition: Identifiable {
     let squatAttempts: [Double?]
     let benchAttempts: [Double?]
     let deadliftAttempts: [Double?]
+    let total: Double
+    let dots: Double
+}
+
+struct PersonalBests: Codable {
+    let squat: Double
+    let bench: Double
+    let deadlift: Double
     let total: Double
     let dots: Double
 }
