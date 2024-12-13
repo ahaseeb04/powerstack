@@ -255,7 +255,7 @@ class LifterViewModel: ObservableObject {
             
             if let httpResponse = response as? HTTPURLResponse {
                 DispatchQueue.main.async {
-                    self.resourceFound = httpResponse.statusCode != 404
+                    self.resourceFound = httpResponse.statusCode == 200
                 }
             }
             
