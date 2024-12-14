@@ -57,6 +57,10 @@ struct OpenPowerliftingSearchView: View {
                     .cornerRadius(10)
                     .disableAutocorrection(true)
                     .onChange(of: lifterName) {
+                        if lifterName.isEmpty {
+                            viewModel.reset()
+                        }
+                        
                         filterSuggestions()
                         
                         debounceTimer?.invalidate()
@@ -493,6 +497,10 @@ class LifterViewModel: ObservableObject {
                 self.errorMessage = "Error saving data to Firestore: \(error.localizedDescription)"
             }
         }
+    }
+    
+    func reset() {
+        self.lifters = []
     }
 }
 
