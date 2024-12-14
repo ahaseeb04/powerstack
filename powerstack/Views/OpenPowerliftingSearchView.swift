@@ -19,6 +19,8 @@ struct OpenPowerliftingSearchView: View {
     @State private var suggestion: String? = nil
     @State private var filteredSuggestions: [String] = []
     
+    @State private var invoked: Bool = false
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -66,7 +68,11 @@ struct OpenPowerliftingSearchView: View {
                         debounceTimer?.invalidate()
                                         
                         debounceTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { _ in
-                            viewModel.fetchLifters(for: lifterName)
+                            if !invoked {
+                                viewModel.fetchLifters(for: lifterName)
+                            }
+                            
+                            invoked = false
                         }
                     }
                     .gesture(
@@ -76,6 +82,8 @@ struct OpenPowerliftingSearchView: View {
                                     lifterName = suggestion
                                     
                                     viewModel.fetchLifters(for: lifterName)
+                                    
+                                    invoked = true
                                 }
                             }
                     )
