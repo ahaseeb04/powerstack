@@ -27,7 +27,7 @@ struct OpenPowerliftingSearchView: View {
                 VStack {
                     searchTextField
                     
-                    if viewModel.resourceFound {
+                    if lifterName.count > 2 && viewModel.resourceFound {
                         lifterPersonalBestsView
                         lifterCompetitionsView
                     }
@@ -80,15 +80,12 @@ struct OpenPowerliftingSearchView: View {
             }
             .padding(.horizontal)
             
-            if let suggestion = suggestion, !lifterName.isEmpty {
-                HStack {
-                    Text(lifterName)
-                        .foregroundColor(.clear)
-                        .padding(.trailing, 25)
-                    Text(suggestion.dropFirst(lifterName.count))
-                        .foregroundColor(Color.gray.opacity(0.5))
-                        .allowsHitTesting(false)
-                }
+            HStack {
+                Text(lifterName)
+                    .foregroundColor(.clear)
+                    .padding(.trailing, 25)
+                Text(suggestion?.dropFirst(lifterName.count) ?? "")
+                    .foregroundColor(Color.gray.opacity(0.5))
             }
         }
     }
