@@ -27,7 +27,11 @@ struct OpenPowerliftingSearchView: View {
             
             ScrollView {
                 VStack {
-                    searchTextField
+                    if SettingsManager.shouldDisableSearchPrediction() {
+                        searchTextFieldNoPrediction
+                    } else {
+                        searchTextField
+                    }
                     
                     if lifterName.count > 2 && viewModel.resourceFound {
                         lifterPersonalBestsView
@@ -99,6 +103,28 @@ struct OpenPowerliftingSearchView: View {
                 Text(suggestion?.dropFirst(lifterName.count) ?? "")
                     .foregroundColor(Color.gray.opacity(0.5))
             }
+        }
+    }
+    
+    private var searchTextFieldNoPrediction: some View {
+        ZStack {
+            TextField("Enter lifter name", text: $lifterName)
+                .padding()
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(10)
+                .disableAutocorrection(true)
+                .padding(.horizontal)
+                .onChange(of: lifterName) {
+                    if lifterName.isEmpty {
+                        viewModel.reset()
+                    }
+                    
+                    debounceTimer?.invalidate()
+                                    
+                    debounceTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { _ in
+                        viewModel.fetchLifters(for: lifterName)
+                    }
+                }
         }
     }
     
