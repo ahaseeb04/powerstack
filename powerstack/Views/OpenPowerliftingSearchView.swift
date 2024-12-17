@@ -11,11 +11,15 @@ import Foundation
 import FirebaseFirestore
 
 struct OpenPowerliftingSearchView: View {
-    @StateObject public var viewModel = LifterViewModel()
     @State private var debounceTimer: Timer? = nil
+    @StateObject public var viewModel = LifterViewModel()
     
     @State private var lifterName: String = ""
-    @State private var prediction: String = ""
+    
+    @State private var suggestion: String? = nil
+    @State private var filteredSuggestions: [String] = []
+    
+    @State private var invoked: Bool = false
     
     var body: some View {
         ZStack {
@@ -23,9 +27,13 @@ struct OpenPowerliftingSearchView: View {
             
             ScrollView {
                 VStack {
-                    searchTextField
+                    if SettingsManager.shouldDisableSearchPrediction() {
+                        searchTextFieldNoPrediction
+                    } else {
+                        searchTextField
+                    }
                     
-                    if viewModel.resourceFound {
+                    if lifterName.count > 2 && viewModel.resourceFound {
                         lifterPersonalBestsView
                         lifterCompetitionsView
                     }
@@ -41,22 +49,83 @@ struct OpenPowerliftingSearchView: View {
                 Text("OpenPowerlifting Search")
             }
         }
+        .onAppear {
+            viewModel.fetchSuggestions()
+        }
     }
-
+    
     private var searchTextField: some View {
-        TextField("Enter lifter name", text: $lifterName)
-            .padding()
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(10)
-            .padding(.horizontal)
-            .disableAutocorrection(true)
-            .onChange(of: lifterName) {
-                debounceTimer?.invalidate()
+        ZStack(alignment: .leading) {
+            HStack(alignment: .center) {
+                TextField("Enter lifter name", text: $lifterName)
+                    .padding()
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(10)
+                    .disableAutocorrection(true)
+                    .onChange(of: lifterName) {
+                        if lifterName.isEmpty {
+                            viewModel.reset()
+                        }
+                        
+                        filterSuggestions()
+                        
+                        debounceTimer?.invalidate()
+                                        
+                        debounceTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { _ in
+                            if !invoked {
+                                viewModel.fetchLifters(for: lifterName)
+                            }
+                            
+                            invoked = false
+                        }
+                    }
+                    .gesture(
+                        DragGesture(minimumDistance: 30)
+                            .onEnded { value in
+                                if let suggestion = suggestion, value.translation.width > 0 {
+                                    lifterName = suggestion
+                                    
+                                    viewModel.fetchLifters(for: lifterName)
+                                    
+                                    invoked = true
+                                }
+                            }
+                    )
                 
-                debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
-                    viewModel.fetchLifters(for: lifterName)
-                }
+                Spacer()
             }
+            .padding(.horizontal)
+            
+            HStack {
+                Text(lifterName)
+                    .foregroundColor(.clear)
+                    .padding(.trailing, 25)
+                Text(suggestion?.dropFirst(lifterName.count) ?? "")
+                    .foregroundColor(Color.gray.opacity(0.5))
+            }
+        }
+    }
+    
+    private var searchTextFieldNoPrediction: some View {
+        ZStack {
+            TextField("Enter lifter name", text: $lifterName)
+                .padding()
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(10)
+                .disableAutocorrection(true)
+                .padding(.horizontal)
+                .onChange(of: lifterName) {
+                    if lifterName.isEmpty {
+                        viewModel.reset()
+                    }
+                    
+                    debounceTimer?.invalidate()
+                                    
+                    debounceTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { _ in
+                        viewModel.fetchLifters(for: lifterName)
+                    }
+                }
+        }
     }
     
     private var lifterPersonalBestsView: some View {
@@ -111,7 +180,7 @@ struct OpenPowerliftingSearchView: View {
                             Text("Dots")
                                 .font(.caption)
                                 .foregroundColor(.gray)
-                            Text(String(lifter.personalBests.dots))
+                            Text(String(format: "%.2f", lifter.personalBests.dots))
                                 .foregroundColor(.white)
                         }
                         Spacer()
@@ -232,6 +301,17 @@ struct OpenPowerliftingSearchView: View {
             return formattedAttempt
         }.joined(separator: "/")
     }
+    
+    private func filterSuggestions() {
+        if lifterName.count < 3 {
+            suggestion = nil
+            return
+        }
+        
+        filteredSuggestions = viewModel.suggestions.filter { $0.lowercased().hasPrefix(lifterName.lowercased()) }
+        
+        suggestion = filteredSuggestions.first ?? nil
+    }
 }
 
 
@@ -239,8 +319,15 @@ class LifterViewModel: ObservableObject {
     @Published var lifters: [Lifter] = []
     @Published var errorMessage: String? = nil
     @Published var resourceFound: Bool = false
+    @Published var suggestions: [String] = []
     
-    public var db = Firestore.firestore()
+    private var db = Firestore.firestore()
+    
+    func fetchSuggestions() {
+        db.collection("lifters").getDocuments { snapshot, error in
+            self.suggestions = snapshot?.documents.compactMap { $0.documentID } ?? []
+        }
+    }
     
     func fetchLifters(for lifterName: String) {
         guard !lifterName.isEmpty else {
@@ -444,6 +531,10 @@ class LifterViewModel: ObservableObject {
                 self.errorMessage = "Error saving data to Firestore: \(error.localizedDescription)"
             }
         }
+    }
+    
+    func reset() {
+        self.lifters = []
     }
 }
 

@@ -10,6 +10,7 @@ import SwiftUI
 struct SettingsView: View {
     @State private var hideSaveButton: Bool = SettingsManager.shouldHideSaveButton()
     @State private var disableImagePreview: Bool = SettingsManager.shouldDisableImagePreview()
+    @State private var disableSearchPrediction: Bool = SettingsManager.shouldDisableSearchPrediction()
 
     var body: some View {
         ZStack {
@@ -38,14 +39,17 @@ struct SettingsView: View {
                     .listRowBackground(Color.gray.opacity(0.2))
                     .foregroundColor(.white)
                     
-//                    Section() {
-//                        Button(action: { openInstagramProfile(username: "abdul.h83") }) {
-//                            Text("Follow me on Instagram")
-//                                .foregroundColor(.white)
-//                        }
-//                    }
-//                    .listRowBackground(Color.gray.opacity(0.2))
-//                    .foregroundColor(.white)
+                    Section(header: Text("OpenPowerlifting Search")) {
+                        Toggle(isOn: $disableSearchPrediction) {
+                            Text("Disable Predictive Text")
+                                .foregroundColor(.white)
+                        }
+                        .onChange(of: disableSearchPrediction) {
+                            SettingsManager.setDisableSearchPrediction(disableSearchPrediction)
+                        }
+                    }
+                    .listRowBackground(Color.gray.opacity(0.2))
+                    .foregroundColor(.white)
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.black)
@@ -54,12 +58,5 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
-    }
-    
-    func openInstagramProfile(username: String) {
-        let appUrl = URL(string: "instagram://user?username=\(username)")!
-        let webUrl = URL(string: "https://www.instagram.com/\(username)")!
-        
-        UIApplication.shared.open(UIApplication.shared.canOpenURL(appUrl) ? appUrl : webUrl);
     }
 }
