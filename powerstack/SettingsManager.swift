@@ -11,6 +11,8 @@ class SettingsManager {
     private static let hideSaveButtonKey = "hideSaveButton"
     private static let disableImagePreviewKey = "disableImagePreview"
     
+    private static let disableSearchPredictionKey = "disableSearchPrediction"
+    
     static func shouldHideSaveButton() -> Bool {
         return UserDefaults.standard.bool(forKey: hideSaveButtonKey)
     }
@@ -25,5 +27,13 @@ class SettingsManager {
     
     static func setDisableImagePreview(_ disable: Bool) {
         UserDefaults.standard.set(disable, forKey: disableImagePreviewKey)
+    }
+    
+    static func shouldDisableSearchPrediction() -> Bool {
+        return UserDefaults.standard.bool(forKey: disableSearchPredictionKey)
+    }
+    
+    static func setDisableSearchPrediction(_ disable: Bool) {
+        UserDefaults.standard.set(disable, forKey: disableSearchPredictionKey)
     }
 }

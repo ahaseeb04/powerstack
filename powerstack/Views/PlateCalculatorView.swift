@@ -10,8 +10,10 @@ import SwiftUI
 struct PlateCalculatorView: View {
     @State private var userInput: String = ""
     @State private var weightInKgs: Double = 20
-    @State private var distribution: [String: Int] = [:]
+    @State private var usePounds: Bool = false
     @State private var hasCollars: Bool = false
+    @State private var distribution: [String: Int] = [:]
+    
     @State private var renderedImage: UIImage?
     @State private var saveSuccess: Bool = false
     
@@ -20,41 +22,52 @@ struct PlateCalculatorView: View {
             Color.black.ignoresSafeArea()
             
             VStack {
-                Spacer()
-                
                 TextField("Enter weight in lbs", text: $userInput)
                     .keyboardType(.numberPad)
                     .padding()
                     .background(Color.gray.opacity(0.2))
                     .foregroundColor(.white)
-                    .fontWeight(.medium)
                     .cornerRadius(10)
-                    .padding(.top, -325)
-                    .padding(.horizontal, 20)
                     .onChange(of: userInput) {
                         updateDistribution()
                     }
                 
-                Toggle(isOn: $hasCollars) {
-                    Text("Collars")
-                        .font(.system(size: 12, weight: .semibold))
+                Toggle(isOn: $usePounds) {
+                    Text("Lb Plates")
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(.white.opacity(0.5))
                         .textCase(.uppercase)
                 }
-                .padding()
-                .padding(.top, -275)
-                .padding(.horizontal, 5)
-                .onChange(of: hasCollars) {
+                .padding(.top, 10)
+                .onChange(of: usePounds) {
                     updateDistribution()
+                }
+                
+                if !usePounds {
+                    Toggle(isOn: $hasCollars) {
+                        Text("2.5kg Collars")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.5))
+                            .textCase(.uppercase)
+                    }
+                    .onChange(of: hasCollars) {
+                        updateDistribution()
+                    }
                 }
                 
                 Spacer()
             }
+            .padding(.horizontal, 30)
+            .padding(.vertical, 30)
             
             VStack {
                 Spacer()
                 
-                BarbellView(distribution: distribution, hasCollars: hasCollars, showDescription: true)
+                if usePounds {
+                    BarbellViewPounds(distribution: distribution, showDescription: true)
+                } else {
+                    BarbellView(distribution: distribution, hasCollars: hasCollars, showDescription: true)
+                }
                 
                 Spacer()
             }
@@ -133,8 +146,11 @@ struct PlateCalculatorView: View {
     }
     
     func generatePreview() {
-        let hostingController = UIHostingController(rootView: BarbellView(distribution: distribution, hasCollars: hasCollars, showDescription: false)
-            .background(Color.black))
+        let view: AnyView = usePounds
+            ? AnyView(BarbellViewPounds(distribution: distribution, showDescription: false))
+            : AnyView(BarbellView(distribution: distribution, hasCollars: hasCollars, showDescription: false))
+        
+        let hostingController = UIHostingController(rootView: view.background(Color.black))
 
         hostingController.view.bounds = UIScreen.main.bounds
         hostingController.view.layoutIfNeeded()
@@ -161,8 +177,13 @@ struct PlateCalculatorView: View {
     func updateDistribution() {
         if let weight = Double(userInput), weight > 0 {
             saveSuccess = false
-            weightInKgs = min(round((weight / 2.2046) / 2.5) * 2.5, 1000)
-            distribution = barbellDistribution(weight: weightInKgs, bar: hasCollars ? 25 : 20)
+            
+            if usePounds {
+                distribution = barbellDistributionPounds(weight: min(round(weight / 2.5) * 2.5, 1500), bar: 45)
+            } else {
+                weightInKgs = min(round((weight / 2.2046) / 2.5) * 2.5, 1000)
+                distribution = barbellDistribution(weight: weightInKgs, bar: hasCollars ? 25 : 20)
+            }
         }
     }
     
@@ -175,9 +196,30 @@ struct PlateCalculatorView: View {
         var remainingWeight = weight - bar
         
         return plates.reduce(into: [String: Int]()) { result, plate in
-            let count = Int(remainingWeight / (plate.0 * 2))
-            remainingWeight -= Double(count) * (plate.0 * 2)
-            if count > 0 { result[plate.1] = count }
+            let plateWeight = plate.0
+            let count = Int(remainingWeight / (plateWeight * 2))
+            if count > 0 {
+                result[plate.1] = count
+                remainingWeight -= Double(count) * (plateWeight * 2)
+            }
+        }
+    }
+
+    func barbellDistributionPounds(weight: Double, bar: Double) -> [String: Int] {
+        let plates: [(Double, String)] = [
+            (45, "gray"), (35, "gray"), (25, "gray"), (10, "gray"),
+            (5, "gray"), (2.5, "gray")
+        ]
+        
+        var remainingWeight = weight - bar
+        
+        return plates.reduce(into: [String: Int]()) { result, plate in
+            let plateWeight = plate.0
+            let count = Int(remainingWeight / (plateWeight * 2))
+            if count > 0 {
+                result[String(plateWeight)] = count
+                remainingWeight -= Double(count) * (plateWeight * 2)
+            }
         }
     }
 }
@@ -378,6 +420,121 @@ struct BarbellView: View {
         return description.joined(separator: ", ")
     }
 }
+
+struct BarbellViewPounds: View {
+    var distribution: [String: Int]
+    var showDescription: Bool
+    
+    var body: some View {
+        ZStack() {
+            // Barbell
+            Rectangle()
+                .fill(Color.gray)
+                .frame(width: 150, height: 12)
+                .offset(x: -150)
+            
+            Rectangle()
+                .fill(Color.gray)
+                .frame(width: 150, height: 12)
+                .offset(x: 0)
+                .cornerRadius(3, corners: [.topRight, .bottomRight])
+            
+            // Plates
+            HStack(spacing: 0) {
+                ForEach(distribution.keys.sorted(by: { plateWeight(for: $0) > plateWeight(for: $1) }), id: \.self) { plateColor in
+                    if let plateCount = distribution[plateColor], plateCount > 0 {
+                        ForEach(0..<plateCount, id: \.self) { _ in
+                            Rectangle()
+                                .fill(Color.black)
+                                .frame(width: plateWidth(for: plateColor), height: plateHeight(for: plateColor))
+                                .cornerRadius(0)
+                                .overlay(
+                                    Rectangle()
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                )
+                        }
+                    }
+                }
+            }
+            .offset(x: -70)
+            
+            let weight = "\(formattedWeight(totalWeightInLbs() / 2.2046)) kgs / \(formattedWeight(totalWeightInLbs())) lbs"
+            
+            VStack {
+                Spacer()
+                
+                Text(weight)
+                    .foregroundColor(.white)
+                    .font(.largeTitle)
+                    .bold()
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, showDescription ? 150 : 300)
+            }
+            
+            if showDescription {
+                VStack {
+                    Spacer()
+                    
+                    Text(plateDescription())
+                        .foregroundColor(.white)
+                        .font(.subheadline)
+                        .multilineTextAlignment(.center)
+                        .padding(.bottom, 115)
+                }
+            }
+        }
+    }
+    
+    // Helper functions
+    private func plateWeight(for color: String) -> Double {
+        return Double(color) ?? 0
+    }
+    
+    private func plateWidth(for color: String) -> CGFloat {
+        return 12
+    }
+    
+    private func plateHeight(for color: String) -> CGFloat {
+        switch color {
+            case "45.0": return 135
+            case "35.0": return 115
+            case "25.0": return 90
+            case "10.0": return 65
+            case "5.0": return 50
+            case "2.5": return 30
+            default: return 0
+        }
+    }
+    
+    private func formattedWeight(_ weight: Double) -> String {
+        let formatted = String(format: "%.1f", weight)
+        return formatted.replacingOccurrences(of: ".0", with: "")
+    }
+    
+    private func totalWeightInLbs() -> Double {
+        let platesWeight = distribution.reduce(0.0) {
+            $0 + Double($1.value) * plateWeight(for: $1.key)
+        }
+        
+        return (platesWeight * 2) + 45
+    }
+    
+    private func plateDescription() -> String {
+        var description = [String]()
+        
+        for color in distribution.keys.sorted(by: { plateWeight(for: $0) > plateWeight(for: $1) }) {
+            if let count = distribution[color], count > 0 {
+                let weight = plateWeight(for: color)
+                let formattedWeight = weight.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(weight))" : "\(weight)"
+                description.append("\(formattedWeight)x\(count)")
+            }
+        }
+        
+        return description.joined(separator: ", ")
+    }
+}
+
 
 extension String {
     var color: Color {

@@ -8,19 +8,31 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var selectedTab: Int = 0
+    
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             PlateCalculatorView()
                 .tabItem {
                     Label("Calculator", systemImage: "align.vertical.center")
                 }
+                .tag(0)
+            
+            ToolsView()
+                .tabItem {
+                    Label("Tools", systemImage: "app.badge")
+                }
+                .tag(1)
+            
             
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
+                .tag(2)
         }
         .accentColor(.white)
+        .environment(\.colorScheme, .dark)
     }
 }
 
