@@ -201,7 +201,7 @@ struct OpenPowerliftingSearchView: View {
     
     private var lifterProgressView: some View {
         Group {
-            if let lifter = viewModel.lifters.first, lifter.progress.total > 0 {
+            if let lifter = viewModel.lifters.first, lifter.competitions.count > 1 {
                 VStack(spacing: 10) {
                     Text("Progress")
                         .font(.system(size: 24))
