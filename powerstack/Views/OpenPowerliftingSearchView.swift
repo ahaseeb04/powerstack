@@ -252,7 +252,7 @@ struct OpenPowerliftingSearchView: View {
                             Text("Dots")
                                 .font(.caption)
                                 .foregroundColor(.gray)
-                            Text("+\(String(format: "%.2f", lifter.progress.dots))")
+                            Text("\(lifter.progress.dots)%")
                                 .foregroundColor(.white)
                         }
                         Spacer()
@@ -607,7 +607,7 @@ class LifterViewModel: ObservableObject {
             bench: computeProgress(first: firstMeetBench, best: personalBests.bench),
             deadlift: computeProgress(first: firstMeetDeadlift, best: personalBests.deadlift),
             total: computeProgress(first: firstMeetTotal, best: personalBests.total),
-            dots: personalBests.dots - firstMeetDots
+            dots: computeProgress(first: firstMeetDots, best: personalBests.dots)
         )
         
         let lifter = Lifter(name: rows.dropFirst().first?.components(separatedBy: ",")[nameIndex] ?? "Unknown", personalBests: personalBests, progress: progress, competitions: competitions)
@@ -681,5 +681,5 @@ struct Progress: Codable {
     let bench: Int
     let deadlift: Int
     let total: Int
-    let dots: Double
+    let dots: Int
 }
