@@ -567,7 +567,7 @@ class LifterViewModel: ObservableObject {
             let total = Double(columns[totalIndex]) ?? 0.0
             let dots = Double(columns[dotsIndex]) ?? 0.0
             
-            if !squatAttempts.compactMap({ $0 }).isEmpty, !benchAttempts.compactMap({ $0 }).isEmpty, !deadliftAttempts.compactMap({ $0 }).isEmpty {
+            if [squatAttempts, benchAttempts, deadliftAttempts].allSatisfy({ !$0.compactMap({ $0 }).isEmpty }) {
                 firstMeetSquat = squatAttempts.compactMap{ $0 }.max() ?? 0
                 firstMeetBench = benchAttempts.compactMap{ $0 }.max() ?? 0
                 firstMeetDeadlift = deadliftAttempts.compactMap{ $0 }.max() ?? 0
