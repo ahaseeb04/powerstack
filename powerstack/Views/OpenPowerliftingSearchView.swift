@@ -524,7 +524,7 @@ class LifterViewModel: ObservableObject {
         var firstMeetTotal: Double = 0
         var firstMeetDots: Double = 0
         
-        for (i, row) in rows.dropFirst().enumerated() {
+        for row in rows.dropFirst() {
             let columns = row.components(separatedBy: ",")
             guard columns.count > max(placingIndex, dotsIndex, totalIndex) else { continue }
             
@@ -567,7 +567,7 @@ class LifterViewModel: ObservableObject {
             let total = Double(columns[totalIndex]) ?? 0.0
             let dots = Double(columns[dotsIndex]) ?? 0.0
             
-            if i == rows.dropFirst().count - 1 {
+            if !squatAttempts.compactMap({ $0 }).isEmpty, !benchAttempts.compactMap({ $0 }).isEmpty, !deadliftAttempts.compactMap({ $0 }).isEmpty {
                 firstMeetSquat = squatAttempts.compactMap{ $0 }.max() ?? 0
                 firstMeetBench = benchAttempts.compactMap{ $0 }.max() ?? 0
                 firstMeetDeadlift = deadliftAttempts.compactMap{ $0 }.max() ?? 0
@@ -628,6 +628,8 @@ class LifterViewModel: ObservableObject {
     }
     
     func computeProgress(first: Double, best: Double) -> Int {
+        guard first > 0 else { return 0 }
+        
         return Int(((best - first) / first * 100).rounded())
     }
     
