@@ -28,7 +28,7 @@ struct OneRmCalculatorView: View {
                 .padding(.horizontal)
                 
                 if !oneRepMax.isEmpty {
-                    Text("\nYour estimated one-rep max is \n\(oneRepMax.replacingOccurrences(of: ".0", with: ""))")
+                    Text(oneRepMax)
                         .multilineTextAlignment(.center)
                         .font(.system(size: 24))
                         .bold()
@@ -37,6 +37,12 @@ struct OneRmCalculatorView: View {
                 }
                 
                 Spacer()
+                
+                Text("Disclaimer: This calculation uses the Brzycki formula and may not be 100% accurate.")
+                    .font(.footnote)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding()
             }
         }
         .dismissKeyboardOnTap()
@@ -61,14 +67,19 @@ struct OneRmCalculatorView: View {
     }
     
     private func calculateOneRepMax() {
-        guard let weight = Double(weight), let reps = Int(reps), weight > 20, reps > 0, reps <= 10 else {
+        guard let weight = Double(weight), let reps = Double(reps), weight > 20, reps > 0 else {
             oneRepMax = ""
             return
         }
         
-        // Using Brzycki formula
-        let value = weight / (1.0278 - 0.0278 * Double(reps))
+        guard reps <= 10 else {
+            oneRepMax = "\nReps cannot exceed 10"
+            return
+        }
         
-        oneRepMax = String(format: "%.1f", value)
+        // Using Brzycki formula
+        let value = weight / (1.0278 - 0.0278 * reps)
+        
+        oneRepMax = "\nYour estimated one-rep max is \n\(String(format: "%.1f", value).replacingOccurrences(of: ".0", with: ""))"
     }
 }
