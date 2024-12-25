@@ -1,5 +1,5 @@
 //
-//  OneRmCalculator.swift
+//  OneRmCalculatorView.swift
 //  powerstack
 //
 //  Created by Abdul Haseeb on 2024-12-24.
