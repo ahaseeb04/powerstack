@@ -24,7 +24,7 @@ struct OneRmCalculatorView: View {
                 .padding(.horizontal)
                 
                 if !oneRepMax.isEmpty {
-                    Text("\nYour estimated one-rep max is \n\(oneRepMax)")
+                    Text("\nYour estimated one-rep max is \n\(oneRepMax.replacingOccurrences(of: ".0", with: ""))")
                         .multilineTextAlignment(.center)
                         .font(.system(size: 24))
                         .bold()
