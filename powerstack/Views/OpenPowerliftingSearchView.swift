@@ -35,6 +35,7 @@ struct OpenPowerliftingSearchView: View {
                     
                     if lifterName.count > 2 && viewModel.resourceFound {
                         lifterPersonalBestsView
+                        lifterProgressView
                         lifterCompetitionsView
                     }
                     
@@ -197,7 +198,77 @@ struct OpenPowerliftingSearchView: View {
             }
         }
     }
-
+    
+    private var lifterProgressView: some View {
+        Group {
+            if let lifter = viewModel.lifters.first, lifter.competitions.count > 1 {
+                VStack(spacing: 10) {
+                    Text("Progress")
+                        .font(.system(size: 24))
+                        .bold()
+                        .foregroundColor(.white)
+                        .padding()
+                    
+                    HStack {
+                        Spacer()
+                        VStack {
+                            Text("Squat")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            
+                            Text("\(lifter.progress.squat)%")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Spacer()
+                        VStack {
+                            Text("Bench")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text("\(lifter.progress.bench)%")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Spacer()
+                        VStack {
+                            Text("Deadlift")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text("\(lifter.progress.deadlift)%")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Spacer()
+                        VStack {
+                            Text("Total")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text("\(lifter.progress.total)%")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Spacer()
+                        VStack {
+                            Text("Dots")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text("\(lifter.progress.dots)%")
+                                .foregroundColor(.white)
+                        }
+                        Spacer()
+                    }
+                    .padding()
+                    .background(Color.black)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                    )
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                }
+            }
+        }
+    }
 
     private var lifterCompetitionsView: some View {
         Group {
@@ -330,7 +401,7 @@ class LifterViewModel: ObservableObject {
     }
     
     func fetchLifters(for lifterName: String) {
-        guard !lifterName.isEmpty else {
+        guard !lifterName.isEmpty, lifterName.split(separator: " ").count >= 2 else {
             self.resourceFound = false
             return
         }
@@ -445,6 +516,13 @@ class LifterViewModel: ObservableObject {
         
         var competitions: [Competition] = []
         var personalBests = PersonalBests(squat: 0.0, bench: 0.0, deadlift: 0.0, total: 0.0, dots: 0.0)
+        var progress = Progress(squat: 0, bench: 0, deadlift: 0, total: 0, dots: 0)
+        
+        var firstMeetSquat: Double = 0
+        var firstMeetBench: Double = 0
+        var firstMeetDeadlift: Double = 0
+        var firstMeetTotal: Double = 0
+        var firstMeetDots: Double = 0
         
         for row in rows.dropFirst() {
             let columns = row.components(separatedBy: ",")
@@ -489,6 +567,14 @@ class LifterViewModel: ObservableObject {
             let total = Double(columns[totalIndex]) ?? 0.0
             let dots = Double(columns[dotsIndex]) ?? 0.0
             
+            if [squatAttempts, benchAttempts, deadliftAttempts].allSatisfy({ !$0.compactMap({ $0 }).isEmpty }) {
+                firstMeetSquat = squatAttempts.compactMap{ $0 }.max() ?? 0
+                firstMeetBench = benchAttempts.compactMap{ $0 }.max() ?? 0
+                firstMeetDeadlift = deadliftAttempts.compactMap{ $0 }.max() ?? 0
+                firstMeetTotal = total
+                firstMeetDots = dots
+            }
+            
             personalBests = PersonalBests(
                 squat: max(personalBests.squat, squatAttempts.compactMap{ $0 }.max() ?? 0.0),
                 bench: max(personalBests.bench, benchAttempts.compactMap{ $0 }.max() ?? 0.0),
@@ -516,7 +602,15 @@ class LifterViewModel: ObservableObject {
             competitions.append(competition)
         }
         
-        let lifter = Lifter(name: rows.dropFirst().first?.components(separatedBy: ",")[nameIndex] ?? "Unknown", personalBests: personalBests, competitions: competitions)
+        progress = Progress(
+            squat: computeProgress(first: firstMeetSquat, best: personalBests.squat),
+            bench: computeProgress(first: firstMeetBench, best: personalBests.bench),
+            deadlift: computeProgress(first: firstMeetDeadlift, best: personalBests.deadlift),
+            total: computeProgress(first: firstMeetTotal, best: personalBests.total),
+            dots: computeProgress(first: firstMeetDots, best: personalBests.dots)
+        )
+        
+        let lifter = Lifter(name: rows.dropFirst().first?.components(separatedBy: ",")[nameIndex] ?? "Unknown", personalBests: personalBests, progress: progress, competitions: competitions)
         
         let lifterData = LifterData(lifter: lifter, timestamp: Date())
         
@@ -533,6 +627,12 @@ class LifterViewModel: ObservableObject {
         }
     }
     
+    func computeProgress(first: Double, best: Double) -> Int {
+        guard first > 0 else { return 0 }
+        
+        return Int(((best - first) / first * 100).rounded())
+    }
+    
     func reset() {
         self.lifters = []
     }
@@ -547,6 +647,7 @@ struct Lifter: Identifiable, Codable {
     var id = UUID()
     let name: String
     let personalBests: PersonalBests
+    let progress: Progress
     let competitions: [Competition]
 }
 
@@ -573,4 +674,12 @@ struct PersonalBests: Codable {
     let deadlift: Double
     let total: Double
     let dots: Double
+}
+
+struct Progress: Codable {
+    let squat: Int
+    let bench: Int
+    let deadlift: Int
+    let total: Int
+    let dots: Int
 }
