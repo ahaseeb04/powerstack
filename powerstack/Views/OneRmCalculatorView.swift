@@ -8,9 +8,9 @@
 import SwiftUI
 
 struct OneRmCalculatorView: View {
-    @State var weight: String = ""
-    @State var reps: String = ""
-    @State var oneRepMax: String = ""
+    @State private var weight: String = ""
+    @State private var reps: String = ""
+    @State private var oneRepMax: String = ""
     
     var body: some View {
         ZStack {
