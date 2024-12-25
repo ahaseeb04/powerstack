@@ -19,6 +19,10 @@ struct OneRmCalculatorView: View {
             VStack {
                 HStack(spacing: 10) {
                     CustomTextField(placeholder: "Weight", text: $weight)
+                    
+                    Image(systemName: "multiply")
+                        .foregroundColor(Color.white.opacity(0.5))
+                    
                     CustomTextField(placeholder: "Reps", text: $reps)
                 }
                 .padding(.horizontal)
