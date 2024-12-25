@@ -18,6 +18,10 @@ struct ToolsView: View {
                 NavigationLink(destination: OneRmCalculatorView()) {
                     Text("One-Rep Max Calculator")
                 }
+                
+                NavigationLink(destination: StatisticsCalculatorView()) {
+                    Text("Statistics Calculator")
+                }
             }
             .navigationTitle("Tools")
         }

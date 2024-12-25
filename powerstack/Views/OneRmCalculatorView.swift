@@ -56,7 +56,7 @@ struct OneRmCalculatorView: View {
     
     private func CustomTextField(placeholder: String, text: Binding<String>) -> some View {
         TextField(placeholder, text: text)
-            .keyboardType(.numberPad)
+            .keyboardType(.decimalPad)
             .padding()
             .background(Color.gray.opacity(0.2))
             .cornerRadius(10)
