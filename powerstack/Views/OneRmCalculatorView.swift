@@ -67,7 +67,7 @@ struct OneRmCalculatorView: View {
     }
     
     private func calculateOneRepMax() {
-        guard let weight = Double(weight), let reps = Double(reps), weight > 20, reps > 0 else {
+        guard let weight = Double(weight), let reps = Double(reps), weight > 20, reps > 0, reps <= 12 else {
             oneRepMax = ""
             return
         }
