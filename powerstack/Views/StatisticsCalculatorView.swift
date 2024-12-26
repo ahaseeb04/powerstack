@@ -10,7 +10,7 @@ import SwiftUI
 struct StatisticsCalculatorView: View {
     @State private var total: String = ""
     @State private var bodyweight: String = ""
-    @State private var gender: String = "Male"
+    @State private var gender: Gender = Gender.male
     
     @State private var dots: String = ""
     @State private var oldWilks: String = ""
@@ -32,12 +32,12 @@ struct StatisticsCalculatorView: View {
                 .padding(.bottom, 10)
                 
                 Picker("Gender", selection: $gender) {
-                    Text("Male").tag("Male")
-                    Text("Female").tag("Female")
+                    Text("Male").tag(Gender.male)
+                    Text("Female").tag(Gender.female)
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: gender) {
-                    refresh()
+                    update()
                 }
                 
                 VStack {
@@ -130,80 +130,75 @@ struct StatisticsCalculatorView: View {
             .cornerRadius(10)
             .disableAutocorrection(true)
             .onChange(of: text.wrappedValue) {
-                refresh()
+                update()
             }
     }
     
-    private func refresh() {
-        calculateDots()
-        calculateOldWilks()
-        calculateNewWilks()
+    private func update() {
+        dots = compute(.dots)
+        oldWilks = compute(.oldWilks)
+        newWilks = compute(.newWilks)
     }
     
-    private func calculateDots() {
+    private func compute(_ type: CalculationType) -> String {
         guard bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
-            dots = ""
-            return
+            return ""
         }
         
-        let isMale = gender == "Male"
+        let (coefficients, weightRange, numerator) = type.parameters(for: gender)
         
-        let coefficients = isMale
-            ? [-307.75076, 24.0900756, -0.1918759221, 0.0007391293, -0.000001093]
-            : [-57.96288, 13.6175032, -0.1126655495, 0.0005158568, -0.0000010706]
-        
-        let weightRange: ClosedRange<Double> = isMale ? 40...210 : 40...150
         let adjustedBodyweight = min(max(bodyweight, weightRange.lowerBound), weightRange.upperBound)
         
         let denominator = coefficients.dropFirst().enumerated().reduce(coefficients[0]) { (acc, e) in
             acc + e.element * pow(adjustedBodyweight, Double(e.offset + 1))
         }
         
-        dots = String(format: "%.2f", (500 / denominator) * total)
+        return String(format: "%.2f", (numerator / denominator) * total)
     }
-    
-    private func calculateOldWilks() {
-        guard bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
-            oldWilks = ""
-            return
-        }
-        
-        let isMale = gender == "Male"
-        
-        let coefficients: [Double] = isMale
-            ? [-216.0475144, 16.2606339, -0.002388645, -0.00113732, 7.01863e-6, -1.291e-8]
-            : [594.31747775582, -27.23842536447, 0.82112226871, -0.00930733913, 4.731582e-5, -9.054e-8]
-        
-        let weightRange: ClosedRange<Double> = isMale ? 40...201.9 : 26.51...154.53
-        let adjustedBodyWeight = min(max(bodyweight, weightRange.lowerBound), weightRange.upperBound)
-        
-        let denominator = coefficients.dropFirst().enumerated().reduce(coefficients[0]) { acc, element in
-            acc + element.element * pow(adjustedBodyWeight, Double(element.offset + 1))
-        }
-        
-        oldWilks = String(format: "%.2f", (500 / denominator) * total)
-    }
-    
-    private func calculateNewWilks() {
-        guard bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
-            newWilks = ""
-            return
-        }
-        
-        let isMale = gender == "Male"
-        
-        let coefficients: [Double] = isMale
-            ? [47.4617885411949, 8.47206137941125, 0.073694103462609, -0.00139583381094385, 7.07665973070743e-6, -1.20804336482315e-8]
-            : [-125.425539779509, 13.7121941940668, -0.0330725063103405, -0.0010504000506583, 9.38773881462799e-6, -2.3334613884954e-8]
-        
-        let weightRange: ClosedRange<Double> = isMale ? 40...200.95 : 40...150.95
-        let adjustedBodyWeight = min(max(bodyweight, weightRange.lowerBound), weightRange.upperBound)
-        
-        let denominator = coefficients.dropFirst().enumerated().reduce(coefficients[0]) { acc, element in
-            acc + element.element * pow(adjustedBodyWeight, Double(element.offset + 1))
-        }
-        
-        newWilks = String(format: "%.2f", (600 / denominator) * total)
-    }
+}
 
+enum Gender {
+    case male, female
+    
+    var dotsParams: (coefficients: [Double], weightRange: ClosedRange<Double>, numerator: Double) {
+        switch self {
+        case .male:
+            return ([-307.75076, 24.0900756, -0.1918759221, 0.0007391293, -0.000001093], 40...210, 500)
+        case .female:
+            return ([-57.96288, 13.6175032, -0.1126655495, 0.0005158568, -0.0000010706], 40...150, 500)
+        }
+    }
+    
+    var oldWilksParams: (coefficients: [Double], weightRange: ClosedRange<Double>, numerator: Double) {
+        switch self {
+        case .male:
+            return ([-216.0475144, 16.2606339, -0.002388645, -0.00113732, 7.01863e-6, -1.291e-8], 40...201.9, 500)
+        case .female:
+            return ([594.31747775582, -27.23842536447, 0.82112226871, -0.00930733913, 4.731582e-5, -9.054e-8], 26.51...154.53, 500)
+        }
+    }
+    
+    var newWilksParams: (coefficients: [Double], weightRange: ClosedRange<Double>, numerator: Double) {
+        switch self {
+        case .male:
+            return ([47.4617885411949, 8.47206137941125, 0.073694103462609, -0.00139583381094385, 7.07665973070743e-6, -1.20804336482315e-8], 40...200.95, 600)
+        case .female:
+            return ([-125.425539779509, 13.7121941940668, -0.0330725063103405, -0.0010504000506583, 9.38773881462799e-6, -2.3334613884954e-8], 40...150.95, 600)
+        }
+    }
+}
+
+enum CalculationType {
+    case dots, oldWilks, newWilks
+    
+    func parameters(for gender: Gender) -> (coefficients: [Double], weightRange: ClosedRange<Double>, numerator: Double) {
+        switch self {
+        case .dots:
+            return gender.dotsParams
+        case .oldWilks:
+            return gender.oldWilksParams
+        case .newWilks:
+            return gender.newWilksParams
+        }
+    }
 }
