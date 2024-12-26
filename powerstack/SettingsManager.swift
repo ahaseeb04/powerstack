@@ -10,8 +10,11 @@ import Foundation
 class SettingsManager {
     private static let hideSaveButtonKey = "hideSaveButton"
     private static let disableImagePreviewKey = "disableImagePreview"
-    
     private static let disableSearchPredictionKey = "disableSearchPrediction"
+    private static let weightUnitKey = "weightUnit"
+    
+    static let unitKilograms = "kg"
+    static let unitPounds = "lbs"
     
     static func shouldHideSaveButton() -> Bool {
         return UserDefaults.standard.bool(forKey: hideSaveButtonKey)
@@ -35,5 +38,13 @@ class SettingsManager {
     
     static func setDisableSearchPrediction(_ disable: Bool) {
         UserDefaults.standard.set(disable, forKey: disableSearchPredictionKey)
+    }
+    
+    static func getWeightUnit() -> String {
+        return UserDefaults.standard.string(forKey: weightUnitKey) ?? unitPounds
+    }
+    
+    static func setWeightUnit(_ unit: String) {
+        UserDefaults.standard.set(unit, forKey: weightUnitKey)
     }
 }

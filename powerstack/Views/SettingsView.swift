@@ -11,15 +11,30 @@ struct SettingsView: View {
     @State private var hideSaveButton: Bool = SettingsManager.shouldHideSaveButton()
     @State private var disableImagePreview: Bool = SettingsManager.shouldDisableImagePreview()
     @State private var disableSearchPrediction: Bool = SettingsManager.shouldDisableSearchPrediction()
+    @State private var selectedUnit: String = SettingsManager.getWeightUnit()
 
     var body: some View {
         ZStack {
-            Color.black
-                .ignoresSafeArea()
+            Color.black.ignoresSafeArea()
 
             VStack {
                 Form {
-                    Section(header: Text("Save to Camera Roll")) {
+                    Section(header: Text("Plate Calculator")) {
+                        HStack {
+                            Text("Weight Input")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            Picker("Weight Unit", selection: $selectedUnit) {
+                                Text("lb").tag(SettingsManager.unitPounds)
+                                Text("kg").tag(SettingsManager.unitKilograms)
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .frame(maxWidth: 120)
+                            .onChange(of: selectedUnit) {
+                                SettingsManager.setWeightUnit(selectedUnit)
+                            }
+                        }
+                        
                         Toggle(isOn: $hideSaveButton) {
                             Text("Hide Save to Camera Roll Button")
                                 .foregroundColor(.white)
