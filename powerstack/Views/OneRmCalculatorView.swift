@@ -72,11 +72,6 @@ struct OneRmCalculatorView: View {
             return
         }
         
-        guard reps <= 10 else {
-            oneRepMax = "\nReps cannot exceed 10"
-            return
-        }
-        
         // Using Brzycki formula
         let value = weight / (1.0278 - 0.0278 * reps)
         
