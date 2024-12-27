@@ -194,7 +194,7 @@ struct PowerliftingScoreCalculatorView: View {
             100 * ((total - (coefficients[0] * lnBodyweight - coefficients[1])) /
                (coefficients[2] * lnBodyweight - coefficients[3]))
         
-        return score < 0 ? "0.00" : String(format: "%.2f", score)
+        return String(format: "%.2f", score)
     }
     
     private func calculateIPFGL() -> String {
