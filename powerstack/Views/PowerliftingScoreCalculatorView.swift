@@ -22,12 +22,12 @@ struct PowerliftingScoreCalculatorView: View {
             
             VStack {
                 HStack(spacing: 10) {
-                    CustomTextField(placeholder: "Total (kg)", text: $total)
+                    CustomTextField(placeholder: "Total (\(SettingsManager.getScoreCalculatorWeightUnit()))", text: $total)
                     
                     Image(systemName: "at")
                         .foregroundColor(Color.white.opacity(0.5))
                     
-                    CustomTextField(placeholder: "Bodyweight (kg)", text: $bodyweight)
+                    CustomTextField(placeholder: "Bodyweight (\(SettingsManager.getScoreCalculatorWeightUnit()))", text: $bodyweight)
                 }
                 .padding(.bottom, 10)
                 
@@ -156,7 +156,7 @@ struct PowerliftingScoreCalculatorView: View {
             return calculateIPFGL()
         }
         
-        guard let params = type.parameters(for: gender), bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
+        guard let params = type.parameters(for: gender), bodyweight.count > 1, let total = handleConversion(Double(total)!), let bodyweight = handleConversion(Double(bodyweight)!) else {
             return ""
         }
         
@@ -172,7 +172,7 @@ struct PowerliftingScoreCalculatorView: View {
     }
     
     private func calculateIPF() -> String {
-        guard bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
+        guard bodyweight.count > 1, let total = handleConversion(Double(total)!), let bodyweight = handleConversion(Double(bodyweight)!) else {
             return ""
         }
         
@@ -199,7 +199,7 @@ struct PowerliftingScoreCalculatorView: View {
     }
     
     private func calculateIPFGL() -> String {
-        guard bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
+        guard bodyweight.count > 1, let total = handleConversion(Double(total)!), let bodyweight = handleConversion(Double(bodyweight)!) else {
             return ""
         }
         
@@ -220,6 +220,13 @@ struct PowerliftingScoreCalculatorView: View {
         let score = (100 / denominator) * total
         
         return String(format: "%.2f", score)
+    }
+    
+    private func handleConversion(_ number: Double) -> Double? {
+        let weightUnit = SettingsManager.getScoreCalculatorWeightUnit()
+        let conversionFactor = weightUnit == SettingsManager.unitPounds ? 2.2046 : 1.0
+        
+        return number / conversionFactor
     }
 }
 

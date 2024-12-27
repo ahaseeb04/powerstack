@@ -12,6 +12,7 @@ class SettingsManager {
     private static let disableImagePreviewKey = "disableImagePreview"
     private static let disableSearchPredictionKey = "disableSearchPrediction"
     private static let weightUnitKey = "weightUnit"
+    private static let scoreCalculatorWeightUnitKey = "scoreCalculatorWeightUnit"
     
     static let unitKilograms = "kg"
     static let unitPounds = "lbs"
@@ -46,5 +47,13 @@ class SettingsManager {
     
     static func setWeightUnit(_ unit: String) {
         UserDefaults.standard.set(unit, forKey: weightUnitKey)
+    }
+    
+    static func getScoreCalculatorWeightUnit() -> String {
+        return UserDefaults.standard.string(forKey: scoreCalculatorWeightUnitKey) ?? unitKilograms
+    }
+    
+    static func setScoreCalculatorWeightUnit(_ unit: String) {
+        UserDefaults.standard.set(unit, forKey: scoreCalculatorWeightUnitKey)
     }
 }

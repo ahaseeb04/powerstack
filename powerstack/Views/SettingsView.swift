@@ -12,6 +12,7 @@ struct SettingsView: View {
     @State private var disableImagePreview: Bool = SettingsManager.shouldDisableImagePreview()
     @State private var disableSearchPrediction: Bool = SettingsManager.shouldDisableSearchPrediction()
     @State private var selectedUnit: String = SettingsManager.getWeightUnit()
+    @State private var scoreCalculatorSelectedUnit: String = SettingsManager.getScoreCalculatorWeightUnit()
 
     var body: some View {
         ZStack {
@@ -25,8 +26,8 @@ struct SettingsView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
                             Picker("Weight Unit", selection: $selectedUnit) {
-                                Text("lb").tag(SettingsManager.unitPounds)
-                                Text("kg").tag(SettingsManager.unitKilograms)
+                                Text(SettingsManager.unitPounds).tag(SettingsManager.unitPounds)
+                                Text(SettingsManager.unitKilograms).tag(SettingsManager.unitKilograms)
                             }
                             .pickerStyle(SegmentedPickerStyle())
                             .frame(maxWidth: 120)
@@ -61,6 +62,25 @@ struct SettingsView: View {
                         }
                         .onChange(of: disableSearchPrediction) {
                             SettingsManager.setDisableSearchPrediction(disableSearchPrediction)
+                        }
+                    }
+                    .listRowBackground(Color.gray.opacity(0.2))
+                    .foregroundColor(.white)
+                    
+                    Section(header: Text("Powerlifting Score Calculator")) {
+                        HStack {
+                            Text("Weight Input")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            Picker("Weight Unit", selection: $scoreCalculatorSelectedUnit) {
+                                Text(SettingsManager.unitPounds).tag(SettingsManager.unitPounds)
+                                Text(SettingsManager.unitKilograms).tag(SettingsManager.unitKilograms)
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .frame(maxWidth: 120)
+                            .onChange(of: scoreCalculatorSelectedUnit) {
+                                SettingsManager.setScoreCalculatorWeightUnit(scoreCalculatorSelectedUnit)
+                            }
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
