@@ -19,8 +19,8 @@ struct ToolsView: View {
                     Text("One-Rep Max Calculator")
                 }
                 
-                NavigationLink(destination: StatisticsCalculatorView()) {
-                    Text("Statistics Calculator")
+                NavigationLink(destination: PowerliftingScoreCalculatorView()) {
+                    Text("Powerlifting Score Calculator")
                 }
             }
             .navigationTitle("Tools")

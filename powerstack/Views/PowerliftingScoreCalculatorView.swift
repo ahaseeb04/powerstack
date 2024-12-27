@@ -1,5 +1,5 @@
 //
-//  StatisticsCalculatorView.swift
+//  PowerliftingScoreCalculatorView.swift
 //  powerstack
 //
 //  Created by Abdul Haseeb on 2024-12-25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct StatisticsCalculatorView: View {
+struct PowerliftingScoreCalculatorView: View {
     @State private var total: String = ""
     @State private var bodyweight: String = ""
     @State private var gender: Gender = Gender.male
@@ -17,7 +17,8 @@ struct StatisticsCalculatorView: View {
     @State private var dots: String = ""
     @State private var oldWilks: String = ""
     @State private var newWilks: String = ""
-    @State private var ipfGl: String = ""
+    @State private var ipf: String = ""
+    @State private var ipfGL: String = ""
     
     var body: some View {
         ZStack {
@@ -54,14 +55,15 @@ struct StatisticsCalculatorView: View {
                     }
                     
                     Picker("Event", selection: $category) {
-                        Text("Full Meet").tag("PL")
-                        Text("Bench Only").tag("BN")
+                        Text("3-Lift").tag("PL")
+                        Text("Bench-Only").tag("BN")
                     }
                     .pickerStyle(.segmented)
                     .onChange(of: category) {
                         update()
                     }
                 }
+                .padding(.top, 5)
                 
                 VStack {
                     if !dots.isEmpty {
@@ -80,28 +82,6 @@ struct StatisticsCalculatorView: View {
                                         .textCase(.uppercase)
                                     
                                     Text(dots)
-                                        .foregroundColor(.white)
-                                        .font(.headline)
-                                }
-                            )
-                    }
-                    
-                    if !ipfGl.isEmpty {
-                        Rectangle()
-                            .frame(maxWidth: .infinity, maxHeight: 100)
-                            .foregroundColor(Color.clear)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                            .overlay(
-                                VStack {
-                                    Text("IPF GL")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .foregroundColor(Color.white.opacity(0.5))
-                                        .textCase(.uppercase)
-                                    
-                                    Text(ipfGl)
                                         .foregroundColor(.white)
                                         .font(.headline)
                                 }
@@ -151,6 +131,50 @@ struct StatisticsCalculatorView: View {
                                 )
                         }
                     }
+                    
+                    if !ipf.isEmpty && !ipfGL.isEmpty {
+                        HStack {
+                            Rectangle()
+                                .frame(maxWidth: .infinity, maxHeight: 100)
+                                .foregroundColor(Color.clear)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                )
+                                .overlay(
+                                    VStack {
+                                        Text("IPF")
+                                            .font(.system(size: 10, weight: .semibold))
+                                            .foregroundColor(Color.white.opacity(0.5))
+                                            .textCase(.uppercase)
+                                        
+                                        Text(ipf)
+                                            .foregroundColor(.white)
+                                            .font(.headline)
+                                    }
+                                )
+                            
+                            Rectangle()
+                                .frame(maxWidth: .infinity, maxHeight: 100)
+                                .foregroundColor(Color.clear)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                )
+                                .overlay(
+                                    VStack {
+                                        Text("IPF GL")
+                                            .font(.system(size: 10, weight: .semibold))
+                                            .foregroundColor(Color.white.opacity(0.5))
+                                            .textCase(.uppercase)
+                                        
+                                        Text(ipfGL)
+                                            .foregroundColor(.white)
+                                            .font(.headline)
+                                    }
+                                )
+                        }
+                    }
                 }
                 .padding(.top, 20)
                 
@@ -162,7 +186,7 @@ struct StatisticsCalculatorView: View {
         .ignoresSafeArea(.keyboard)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("Statistics Calculator")
+                Text("Powerlifting Score Calculator")
             }
         }
     }
@@ -183,13 +207,16 @@ struct StatisticsCalculatorView: View {
         dots = calculate(.dots)
         oldWilks = calculate(.oldWilks)
         newWilks = calculate(.newWilks)
-        ipfGl = calculate(.ipfGl)
+        ipf = calculate(.ipf)
+        ipfGL = calculate(.ipfGL)
     }
     
     private func calculate(_ type: CalculationType) -> String {
         switch type {
-        case .ipfGl:
-            return calculateIPFGL()
+        case .ipf:
+            return calculateIpf()
+        case .ipfGL:
+            return calculateIpfGL()
         default:
             guard let params = type.parameters(for: gender), bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
                 return ""
@@ -203,13 +230,44 @@ struct StatisticsCalculatorView: View {
                 acc + e.element * pow(adjustedBodyweight, Double(e.offset + 1))
             }
             
-            return String(format: "%.2f", min((numerator / denominator) * total, 2000))
+            return String(format: "%.2f", (numerator / denominator) * total)
         }
     }
     
-    private func calculateIPFGL() -> String {
+    private func calculateIpf() -> String {
         guard bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
             return ""
+        }
+        
+        guard bodyweight > 40 else {
+            return "0.00"
+        }
+        
+        let coefficients: [Double]
+        
+        switch event + category {
+        case "CLBN": coefficients = IPFCoefficients.clbn(gender).coefficients
+        case "EQPL": coefficients = IPFCoefficients.eqpl(gender).coefficients
+        case "EQBN": coefficients = IPFCoefficients.eqbn(gender).coefficients
+        default:     coefficients = IPFCoefficients.clpl(gender).coefficients
+        }
+        
+        let lnBodyweight = log(bodyweight)
+        
+        let score = 500 +
+            100 * ((total - (coefficients[0] * lnBodyweight - coefficients[1])) /
+               (coefficients[2] * lnBodyweight - coefficients[3]))
+        
+        return score < 0 ? "0.00" : String(format: "%.2f", score)
+    }
+    
+    private func calculateIpfGL() -> String {
+        guard bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
+            return ""
+        }
+        
+        guard bodyweight > 35 else {
+            return "0.00"
         }
 
         let coefficients: [Double]
@@ -221,14 +279,11 @@ struct StatisticsCalculatorView: View {
         default:     coefficients = IPFGLCoefficients.clpl(gender).coefficients
         }
 
-        if bodyweight < 35 {
-            return "0.00"
-        }
-
         let power = -coefficients[2] * bodyweight
         let denominator = coefficients[0] - coefficients[1] * exp(power)
         let score = (100 / denominator) * total
-        return String(format: "%.2f", min(score, 2000))
+        
+        return String(format: "%.2f", score)
     }
 }
 
@@ -264,7 +319,7 @@ enum Gender {
 }
 
 enum CalculationType {
-    case dots, oldWilks, newWilks, ipfGl
+    case dots, oldWilks, newWilks, ipf, ipfGL
     
     func parameters(for gender: Gender) -> (coefficients: [Double], weightRange: ClosedRange<Double>, numerator: Double)? {
         switch self {
@@ -274,8 +329,31 @@ enum CalculationType {
             return gender.oldWilksParams
         case .newWilks:
             return gender.newWilksParams
-        case .ipfGl:
-            return nil // IPF GL handled separately
+        case .ipf:
+            return nil // Handled separately
+        case .ipfGL:
+            return nil // Handled separately
+        }
+    }
+}
+
+enum IPFCoefficients {
+    case clpl(Gender)
+    case clbn(Gender)
+    case eqpl(Gender)
+    case eqbn(Gender)
+
+    var coefficients: [Double] {
+        switch self {
+        case .clpl(.male): return [310.67, 857.785, 53.216, 147.0835]
+        case .clbn(.male): return [86.4745, 259.155, 17.5785, 53.122]
+        case .eqpl(.male): return [387.265, 1121.28, 80.6324, 222.4896]
+        case .eqbn(.male): return [133.94, 441.465, 35.3938, 113.0057]
+            
+        case .clpl(.female): return [125.1435, 228.03, 34.5246, 86.8301]
+        case .clbn(.female): return [25.0485, 43.848, 6.7172, 13.952]
+        case .eqpl(.female): return [176.58, 373.315, 48.4534, 110.0103]
+        case .eqbn(.female): return [49.106, 124.209, 23.199, 67.4926];
         }
     }
 }
@@ -292,6 +370,7 @@ enum IPFGLCoefficients {
         case .clbn(.male): return [320.98041, 281.40258, 0.01008]
         case .eqpl(.male): return [1236.25115, 1449.21864, 0.01644]
         case .eqbn(.male): return [381.22073, 733.79378, 0.02398]
+            
         case .clpl(.female): return [610.32796, 1045.59282, 0.03048]
         case .clbn(.female): return [142.40398, 442.52671, 0.04724]
         case .eqpl(.female): return [758.63878, 949.31382, 0.02435]
