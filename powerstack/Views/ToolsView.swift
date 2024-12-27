@@ -18,6 +18,10 @@ struct ToolsView: View {
                 NavigationLink(destination: OneRmCalculatorView()) {
                     Text("One-Rep Max Calculator")
                 }
+                
+                NavigationLink(destination: PowerliftingScoreCalculatorView()) {
+                    Text("Powerlifting Score Calculator")
+                }
             }
             .navigationTitle("Tools")
         }

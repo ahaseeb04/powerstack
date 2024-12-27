@@ -56,7 +56,7 @@ struct OneRmCalculatorView: View {
     
     private func CustomTextField(placeholder: String, text: Binding<String>) -> some View {
         TextField(placeholder, text: text)
-            .keyboardType(.numberPad)
+            .keyboardType(.decimalPad)
             .padding()
             .background(Color.gray.opacity(0.2))
             .cornerRadius(10)
@@ -67,13 +67,8 @@ struct OneRmCalculatorView: View {
     }
     
     private func calculateOneRepMax() {
-        guard let weight = Double(weight), let reps = Double(reps), weight > 20, reps > 0 else {
+        guard let weight = Double(weight), let reps = Double(reps), weight > 20, reps > 0, reps <= 12 else {
             oneRepMax = ""
-            return
-        }
-        
-        guard reps <= 10 else {
-            oneRepMax = "\nReps cannot exceed 10"
             return
         }
         

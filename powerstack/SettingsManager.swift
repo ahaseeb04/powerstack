@@ -10,8 +10,13 @@ import Foundation
 class SettingsManager {
     private static let hideSaveButtonKey = "hideSaveButton"
     private static let disableImagePreviewKey = "disableImagePreview"
-    
     private static let disableSearchPredictionKey = "disableSearchPrediction"
+    private static let weightUnitKey = "weightUnit"
+    private static let scoreCalculatorWeightUnitKey = "scoreCalculatorWeightUnit"
+    private static let hideEventAndCategoryControlsKey = "hideEventAndCategoryControls"
+    
+    static let unitKilograms = "kg"
+    static let unitPounds = "lbs"
     
     static func shouldHideSaveButton() -> Bool {
         return UserDefaults.standard.bool(forKey: hideSaveButtonKey)
@@ -35,5 +40,29 @@ class SettingsManager {
     
     static func setDisableSearchPrediction(_ disable: Bool) {
         UserDefaults.standard.set(disable, forKey: disableSearchPredictionKey)
+    }
+    
+    static func getWeightUnit() -> String {
+        return UserDefaults.standard.string(forKey: weightUnitKey) ?? unitPounds
+    }
+    
+    static func setWeightUnit(_ unit: String) {
+        UserDefaults.standard.set(unit, forKey: weightUnitKey)
+    }
+    
+    static func getScoreCalculatorWeightUnit() -> String {
+        return UserDefaults.standard.string(forKey: scoreCalculatorWeightUnitKey) ?? unitKilograms
+    }
+    
+    static func setScoreCalculatorWeightUnit(_ unit: String) {
+        UserDefaults.standard.set(unit, forKey: scoreCalculatorWeightUnitKey)
+    }
+    
+    static func shouldHideEventAndCategoryControls() -> Bool {
+        return UserDefaults.standard.bool(forKey: hideEventAndCategoryControlsKey)
+    }
+    
+    static func setHideEventAndCategoryControls(_ hide: Bool) {
+        UserDefaults.standard.set(hide, forKey: hideEventAndCategoryControlsKey)
     }
 }

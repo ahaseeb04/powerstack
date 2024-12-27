@@ -22,8 +22,8 @@ struct PlateCalculatorView: View {
             Color.black.ignoresSafeArea()
             
             VStack {
-                TextField("Enter weight in lbs", text: $userInput)
-                    .keyboardType(.numberPad)
+                TextField("Enter weight in \(SettingsManager.getWeightUnit())", text: $userInput)
+                    .keyboardType(.decimalPad)
                     .padding()
                     .background(Color.gray.opacity(0.2))
                     .foregroundColor(.white)
@@ -33,7 +33,7 @@ struct PlateCalculatorView: View {
                     }
                 
                 Toggle(isOn: $usePounds) {
-                    Text("Lb Plates")
+                    Text("Lbs Plates")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(.white.opacity(0.5))
                         .textCase(.uppercase)
@@ -175,13 +175,19 @@ struct PlateCalculatorView: View {
     }
     
     func updateDistribution() {
-        if let weight = Double(userInput), weight > 0 {
+        if var weight = Double(userInput), weight > 0 {
             saveSuccess = false
+            
+            let weightUnit = SettingsManager.getWeightUnit()
+
+            if (weightUnit == SettingsManager.unitPounds && !usePounds) || (weightUnit == SettingsManager.unitKilograms && usePounds) {
+                weight = weightUnit == SettingsManager.unitPounds ? weight / 2.2046 : weight * 2.2046
+            }
             
             if usePounds {
                 distribution = barbellDistributionPounds(weight: min(round(weight / 2.5) * 2.5, 1500), bar: 45)
             } else {
-                weightInKgs = min(round((weight / 2.2046) / 2.5) * 2.5, 1000)
+                weightInKgs = min(round(weight / 2.5) * 2.5, 1000)
                 distribution = barbellDistribution(weight: weightInKgs, bar: hasCollars ? 25 : 20)
             }
         }
