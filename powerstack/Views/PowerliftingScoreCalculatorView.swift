@@ -40,26 +40,29 @@ struct PowerliftingScoreCalculatorView: View {
                     }
                 }
                 
-                VStack {
-                    if let dots = scores["dots"], !dots.isEmpty {
+                if let dots = scores["dots"],
+                   let oldWilks = scores["oldWilks"],
+                   let newWilks = scores["newWilks"],
+                   let IPF = scores["IPF"],
+                   let IPFGL = scores["IPFGL"],
+                   !dots.isEmpty,
+                   !oldWilks.isEmpty, !newWilks.isEmpty,
+                   !IPF.isEmpty, !IPFGL.isEmpty {
+                    VStack {
                         ScoreBox(title: "Dots", score: dots)
-                    }
-                    
-                    if let oldWilks = scores["oldWilks"], let newWilks = scores["newWilks"], !oldWilks.isEmpty && !newWilks.isEmpty {
+                        
                         HStack {
                             ScoreBox(title: "Old Wilks", score: oldWilks)
                             ScoreBox(title: "Wilks2", score: newWilks)
                         }
-                    }
-                    
-                    if let IPF = scores["IPF"], let IPFGL = scores["IPFGL"], !IPF.isEmpty && !IPFGL.isEmpty {
+                        
                         HStack {
                             ScoreBox(title: "IPF", score: IPF)
                             ScoreBox(title: "IPF GL", score: IPFGL)
                         }
                     }
+                    .padding(.top, 20)
                 }
-                .padding(.top, 20)
                 
                 Spacer()
             }
