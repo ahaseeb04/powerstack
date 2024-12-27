@@ -31,144 +31,30 @@ struct PowerliftingScoreCalculatorView: View {
                 }
                 .padding(.bottom, 10)
                 
-                Picker("Gender", selection: $gender) {
-                    Text("Male").tag(Gender.male)
-                    Text("Female").tag(Gender.female)
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: gender) {
-                    update()
-                }
+                GenderPicker()
                 
                 HStack {
-                    Picker("Event", selection: $event) {
-                        Text("Raw").tag("CL")
-                        Text("Equipped").tag("EQ")
-                    }
-                    .pickerStyle(.segmented)
-                    .onChange(of: event) {
-                        update()
-                    }
-                    
-                    Picker("Event", selection: $category) {
-                        Text("3-Lift").tag("PL")
-                        Text("Bench-Only").tag("BN")
-                    }
-                    .pickerStyle(.segmented)
-                    .onChange(of: category) {
-                        update()
-                    }
+                    EventPicker()
+                    CategoryPicker()
                 }
                 .padding(.top, 5)
                 
                 VStack {
                     if let dots = scores["dots"], !dots.isEmpty {
-                        Rectangle()
-                            .frame(maxWidth: .infinity, maxHeight: 100)
-                            .foregroundColor(Color.clear)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                            .overlay(
-                                VStack {
-                                    Text("Dots")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .foregroundColor(Color.white.opacity(0.5))
-                                        .textCase(.uppercase)
-                                    
-                                    Text(dots)
-                                        .foregroundColor(.white)
-                                        .font(.headline)
-                                }
-                            )
+                        ScoreBox(title: "Dots", score: dots)
                     }
                     
                     if let oldWilks = scores["oldWilks"], let newWilks = scores["newWilks"], !oldWilks.isEmpty && !newWilks.isEmpty {
                         HStack {
-                            Rectangle()
-                                .frame(maxWidth: .infinity, maxHeight: 100)
-                                .foregroundColor(Color.clear)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                )
-                                .overlay(
-                                    VStack {
-                                        Text("Old Wilks")
-                                            .font(.system(size: 10, weight: .semibold))
-                                            .foregroundColor(Color.white.opacity(0.5))
-                                            .textCase(.uppercase)
-                                        
-                                        Text(oldWilks)
-                                            .foregroundColor(.white)
-                                            .font(.headline)
-                                    }
-                                )
-                            
-                            Rectangle()
-                                .frame(maxWidth: .infinity, maxHeight: 100)
-                                .foregroundColor(Color.clear)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                )
-                                .overlay(
-                                    VStack {
-                                        Text("Wilks2")
-                                            .font(.system(size: 10, weight: .semibold))
-                                            .foregroundColor(Color.white.opacity(0.5))
-                                            .textCase(.uppercase)
-                                        
-                                        Text(newWilks)
-                                            .foregroundColor(.white)
-                                            .font(.headline)
-                                    }
-                                )
+                            ScoreBox(title: "Old Wilks", score: oldWilks)
+                            ScoreBox(title: "Wilks2", score: oldWilks)
                         }
                     }
                     
                     if let ipf = scores["ipf"], let ipfGL = scores["ipfGL"], !ipf.isEmpty && !ipfGL.isEmpty {
                         HStack {
-                            Rectangle()
-                                .frame(maxWidth: .infinity, maxHeight: 100)
-                                .foregroundColor(Color.clear)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                )
-                                .overlay(
-                                    VStack {
-                                        Text("IPF")
-                                            .font(.system(size: 10, weight: .semibold))
-                                            .foregroundColor(Color.white.opacity(0.5))
-                                            .textCase(.uppercase)
-                                        
-                                        Text(ipf)
-                                            .foregroundColor(.white)
-                                            .font(.headline)
-                                    }
-                                )
-                            
-                            Rectangle()
-                                .frame(maxWidth: .infinity, maxHeight: 100)
-                                .foregroundColor(Color.clear)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                )
-                                .overlay(
-                                    VStack {
-                                        Text("IPF GL")
-                                            .font(.system(size: 10, weight: .semibold))
-                                            .foregroundColor(Color.white.opacity(0.5))
-                                            .textCase(.uppercase)
-                                        
-                                        Text(ipfGL)
-                                            .foregroundColor(.white)
-                                            .font(.headline)
-                                    }
-                                )
+                            ScoreBox(title: "IPF", score: ipf)
+                            ScoreBox(title: "IPF GL", score: ipfGL)
                         }
                     }
                 }
@@ -197,6 +83,61 @@ struct PowerliftingScoreCalculatorView: View {
             .onChange(of: text.wrappedValue) {
                 update()
             }
+    }
+    
+    private func GenderPicker() -> some View {
+        Picker("Gender", selection: $gender) {
+            Text("Male").tag(Gender.male)
+            Text("Female").tag(Gender.female)
+        }
+        .pickerStyle(.segmented)
+        .onChange(of: gender) {
+            update()
+        }
+    }
+    
+    private func EventPicker() -> some View {
+        Picker("Event", selection: $event) {
+            Text("Raw").tag("CL")
+            Text("Equipped").tag("EQ")
+        }
+        .pickerStyle(.segmented)
+        .onChange(of: event) {
+            update()
+        }
+    }
+    
+    private func CategoryPicker() -> some View {
+        Picker("Category", selection: $category) {
+            Text("3-Lift").tag("PL")
+            Text("Bench-Only").tag("BN")
+        }
+        .pickerStyle(.segmented)
+        .onChange(of: category) {
+            update()
+        }
+    }
+    
+    private func ScoreBox(title: String, score: String) -> some View {
+        Rectangle()
+            .frame(maxWidth: .infinity, maxHeight: 100)
+            .foregroundColor(Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+            )
+            .overlay(
+                VStack {
+                    Text(title)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(Color.white.opacity(0.5))
+                        .textCase(.uppercase)
+                    
+                    Text(score)
+                        .foregroundColor(.white)
+                        .font(.headline)
+                }
+            )
     }
     
     private func update() {
