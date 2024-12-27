@@ -22,22 +22,23 @@ struct PowerliftingScoreCalculatorView: View {
             
             VStack {
                 HStack(spacing: 10) {
-                    CustomTextField(placeholder: "Total", text: $total)
+                    CustomTextField(placeholder: "Total (kg)", text: $total)
                     
                     Image(systemName: "at")
                         .foregroundColor(Color.white.opacity(0.5))
                     
-                    CustomTextField(placeholder: "Bodyweight", text: $bodyweight)
+                    CustomTextField(placeholder: "Bodyweight (kg)", text: $bodyweight)
                 }
                 .padding(.bottom, 10)
                 
-                GenderPicker()
-                
-                HStack {
-                    EventPicker()
-                    CategoryPicker()
+                Group {
+                    GenderPicker()
+                    
+                    HStack {
+                        EventPicker()
+                        CategoryPicker()
+                    }
                 }
-                .padding(.top, 5)
                 
                 VStack {
                     if let dots = scores["dots"], !dots.isEmpty {
@@ -47,7 +48,7 @@ struct PowerliftingScoreCalculatorView: View {
                     if let oldWilks = scores["oldWilks"], let newWilks = scores["newWilks"], !oldWilks.isEmpty && !newWilks.isEmpty {
                         HStack {
                             ScoreBox(title: "Old Wilks", score: oldWilks)
-                            ScoreBox(title: "Wilks2", score: oldWilks)
+                            ScoreBox(title: "Wilks2", score: newWilks)
                         }
                     }
                     
@@ -180,10 +181,10 @@ struct PowerliftingScoreCalculatorView: View {
         }
         
         let coefficientMap: [String: (Gender) -> IPFCoefficients] = [
+            "CLPL": IPFCoefficients.clpl,
             "CLBN": IPFCoefficients.clbn,
             "EQPL": IPFCoefficients.eqpl,
             "EQBN": IPFCoefficients.eqbn,
-            "CLPL": IPFCoefficients.clpl
         ]
         
         let coefficients = coefficientMap[event + category]?(gender).coefficients ?? []
@@ -207,10 +208,10 @@ struct PowerliftingScoreCalculatorView: View {
         }
         
         let coefficientMap: [String: (Gender) -> IPFGLCoefficients] = [
+            "CLPL": IPFGLCoefficients.clpl,
             "CLBN": IPFGLCoefficients.clbn,
             "EQPL": IPFGLCoefficients.eqpl,
             "EQBN": IPFGLCoefficients.eqbn,
-            "CLPL": IPFGLCoefficients.clpl
         ]
         
         let coefficients = coefficientMap[event + category]?(gender).coefficients ?? []
