@@ -51,10 +51,10 @@ struct PowerliftingScoreCalculatorView: View {
                         }
                     }
                     
-                    if let ipf = scores["ipf"], let ipfGL = scores["ipfGL"], !ipf.isEmpty && !ipfGL.isEmpty {
+                    if let IPF = scores["IPF"], let IPFGL = scores["IPFGL"], !IPF.isEmpty && !IPFGL.isEmpty {
                         HStack {
-                            ScoreBox(title: "IPF", score: ipf)
-                            ScoreBox(title: "IPF GL", score: ipfGL)
+                            ScoreBox(title: "IPF", score: IPF)
+                            ScoreBox(title: "IPF GL", score: IPFGL)
                         }
                     }
                 }
@@ -147,29 +147,30 @@ struct PowerliftingScoreCalculatorView: View {
     }
     
     private func calculate(_ type: CalculationType) -> String {
-        switch type {
-        case .ipf:
-            return calculateIpf()
-        case .ipfGL:
-            return calculateIpfGL()
-        default:
-            guard let params = type.parameters(for: gender), bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
-                return ""
-            }
-            
-            let (coefficients, weightRange, numerator) = params
-            
-            let adjustedBodyweight = min(max(bodyweight, weightRange.lowerBound), weightRange.upperBound)
-            
-            let denominator = coefficients.dropFirst().enumerated().reduce(coefficients[0]) { (acc, e) in
-                acc + e.element * pow(adjustedBodyweight, Double(e.offset + 1))
-            }
-            
-            return String(format: "%.2f", (numerator / denominator) * total)
+        if type == .IPF {
+            return calculateIPF()
         }
+        
+        if type == .IPFGL {
+            return calculateIPFGL()
+        }
+        
+        guard let params = type.parameters(for: gender), bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
+            return ""
+        }
+        
+        let (coefficients, weightRange, numerator) = params
+        
+        let adjustedBodyweight = min(max(bodyweight, weightRange.lowerBound), weightRange.upperBound)
+        
+        let denominator = coefficients.dropFirst().enumerated().reduce(coefficients[0]) { (acc, e) in
+            acc + e.element * pow(adjustedBodyweight, Double(e.offset + 1))
+        }
+        
+        return String(format: "%.2f", (numerator / denominator) * total)
     }
     
-    private func calculateIpf() -> String {
+    private func calculateIPF() -> String {
         guard bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
             return ""
         }
@@ -178,14 +179,14 @@ struct PowerliftingScoreCalculatorView: View {
             return "0.00"
         }
         
-        let coefficients: [Double]
+        let coefficientMap: [String: (Gender) -> IPFCoefficients] = [
+            "CLBN": IPFCoefficients.clbn,
+            "EQPL": IPFCoefficients.eqpl,
+            "EQBN": IPFCoefficients.eqbn,
+            "CLPL": IPFCoefficients.clpl
+        ]
         
-        switch event + category {
-        case "CLBN": coefficients = IPFCoefficients.clbn(gender).coefficients
-        case "EQPL": coefficients = IPFCoefficients.eqpl(gender).coefficients
-        case "EQBN": coefficients = IPFCoefficients.eqbn(gender).coefficients
-        default:     coefficients = IPFCoefficients.clpl(gender).coefficients
-        }
+        let coefficients = coefficientMap[event + category]?(gender).coefficients ?? []
         
         let lnBodyweight = log(bodyweight)
         
@@ -196,7 +197,7 @@ struct PowerliftingScoreCalculatorView: View {
         return score < 0 ? "0.00" : String(format: "%.2f", score)
     }
     
-    private func calculateIpfGL() -> String {
+    private func calculateIPFGL() -> String {
         guard bodyweight.count > 1, let total = Double(total), let bodyweight = Double(bodyweight) else {
             return ""
         }
@@ -204,18 +205,17 @@ struct PowerliftingScoreCalculatorView: View {
         guard bodyweight > 35 else {
             return "0.00"
         }
-
-        let coefficients: [Double]
         
-        switch event + category {
-        case "CLBN": coefficients = IPFGLCoefficients.clbn(gender).coefficients
-        case "EQPL": coefficients = IPFGLCoefficients.eqpl(gender).coefficients
-        case "EQBN": coefficients = IPFGLCoefficients.eqbn(gender).coefficients
-        default:     coefficients = IPFGLCoefficients.clpl(gender).coefficients
-        }
-
-        let power = -coefficients[2] * bodyweight
-        let denominator = coefficients[0] - coefficients[1] * exp(power)
+        let coefficientMap: [String: (Gender) -> IPFGLCoefficients] = [
+            "CLBN": IPFGLCoefficients.clbn,
+            "EQPL": IPFGLCoefficients.eqpl,
+            "EQBN": IPFGLCoefficients.eqbn,
+            "CLPL": IPFGLCoefficients.clpl
+        ]
+        
+        let coefficients = coefficientMap[event + category]?(gender).coefficients ?? []
+        
+        let denominator = coefficients[0] - coefficients[1] * exp(-coefficients[2] * bodyweight)
         let score = (100 / denominator) * total
         
         return String(format: "%.2f", score)
@@ -254,7 +254,7 @@ enum Gender {
 }
 
 enum CalculationType: CaseIterable {
-    case dots, oldWilks, newWilks, ipf, ipfGL
+    case dots, oldWilks, newWilks, IPF, IPFGL
     
     func parameters(for gender: Gender) -> (coefficients: [Double], weightRange: ClosedRange<Double>, numerator: Double)? {
         switch self {
@@ -264,10 +264,10 @@ enum CalculationType: CaseIterable {
             return gender.oldWilksParams
         case .newWilks:
             return gender.newWilksParams
-        case .ipf:
-            return nil // Handled separately
-        case .ipfGL:
-            return nil // Handled separately
+        case .IPF:
+            return nil
+        case .IPFGL:
+            return nil
         }
     }
 }
