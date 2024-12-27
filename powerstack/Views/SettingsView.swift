@@ -85,7 +85,7 @@ struct SettingsView: View {
                         }
                         
                         Toggle(isOn: $hideEventAndCategoryControls) {
-                            Text("Hide Equipped Section")
+                            Text("Hide Equipped/Bench-Only Switch")
                                 .foregroundColor(.white)
                         }
                         .onChange(of: hideEventAndCategoryControls) {
@@ -99,8 +99,37 @@ struct SettingsView: View {
                 .background(Color.black)
                 .foregroundColor(.white)
             }
+            
+            VStack {
+                Spacer()
+                
+                HStack(spacing: 0) {
+                    Text("Created by ")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                    
+                    Text("Abdul Haseeb")
+                        .font(.footnote)
+                        .foregroundColor(.blue)
+                        .onTapGesture {
+                            openInstagramProfile(username: "abdul.h83")
+                        }
+                }
+            }
+            .padding(.bottom, 50)
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    func openInstagramProfile(username: String) {
+        let appURL = URL(string: "instagram://user?username=\(username)")!
+        let webURL = URL(string: "https://www.instagram.com/\(username)")!
+        
+        if UIApplication.shared.canOpenURL(appURL) {
+            UIApplication.shared.open(appURL, options: [:], completionHandler: nil)
+        } else {
+            UIApplication.shared.open(webURL, options: [:], completionHandler: nil)
+        }
     }
 }
