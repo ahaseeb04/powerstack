@@ -33,7 +33,7 @@ struct PlateCalculatorView: View {
                     }
                 
                 Toggle(isOn: $usePounds) {
-                    Text("Lb Plates")
+                    Text("Lbs Plates")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(.white.opacity(0.5))
                         .textCase(.uppercase)

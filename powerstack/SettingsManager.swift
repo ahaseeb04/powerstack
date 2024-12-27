@@ -13,6 +13,7 @@ class SettingsManager {
     private static let disableSearchPredictionKey = "disableSearchPrediction"
     private static let weightUnitKey = "weightUnit"
     private static let scoreCalculatorWeightUnitKey = "scoreCalculatorWeightUnit"
+    private static let hideEventAndCategoryControlsKey = "hideEventAndCategoryControls"
     
     static let unitKilograms = "kg"
     static let unitPounds = "lbs"
@@ -55,5 +56,13 @@ class SettingsManager {
     
     static func setScoreCalculatorWeightUnit(_ unit: String) {
         UserDefaults.standard.set(unit, forKey: scoreCalculatorWeightUnitKey)
+    }
+    
+    static func shouldHideEventAndCategoryControls() -> Bool {
+        return UserDefaults.standard.bool(forKey: hideEventAndCategoryControlsKey)
+    }
+    
+    static func setHideEventAndCategoryControls(_ hide: Bool) {
+        UserDefaults.standard.set(hide, forKey: hideEventAndCategoryControlsKey)
     }
 }

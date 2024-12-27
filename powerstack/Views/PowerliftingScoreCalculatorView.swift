@@ -34,9 +34,11 @@ struct PowerliftingScoreCalculatorView: View {
                 Group {
                     GenderPicker()
                     
-                    HStack {
-                        EventPicker()
-                        CategoryPicker()
+                    if !SettingsManager.shouldHideEventAndCategoryControls() {
+                        HStack {
+                            EventPicker()
+                            CategoryPicker()
+                        }
                     }
                 }
                 

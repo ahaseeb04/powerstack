@@ -13,6 +13,7 @@ struct SettingsView: View {
     @State private var disableSearchPrediction: Bool = SettingsManager.shouldDisableSearchPrediction()
     @State private var selectedUnit: String = SettingsManager.getWeightUnit()
     @State private var scoreCalculatorSelectedUnit: String = SettingsManager.getScoreCalculatorWeightUnit()
+    @State private var hideEventAndCategoryControls: Bool = SettingsManager.shouldHideEventAndCategoryControls()
 
     var body: some View {
         ZStack {
@@ -30,7 +31,7 @@ struct SettingsView: View {
                                 Text(SettingsManager.unitKilograms).tag(SettingsManager.unitKilograms)
                             }
                             .pickerStyle(SegmentedPickerStyle())
-                            .frame(maxWidth: 120)
+                            .frame(maxWidth: 100)
                             .onChange(of: selectedUnit) {
                                 SettingsManager.setWeightUnit(selectedUnit)
                             }
@@ -77,10 +78,18 @@ struct SettingsView: View {
                                 Text(SettingsManager.unitKilograms).tag(SettingsManager.unitKilograms)
                             }
                             .pickerStyle(SegmentedPickerStyle())
-                            .frame(maxWidth: 120)
+                            .frame(maxWidth: 100)
                             .onChange(of: scoreCalculatorSelectedUnit) {
                                 SettingsManager.setScoreCalculatorWeightUnit(scoreCalculatorSelectedUnit)
                             }
+                        }
+                        
+                        Toggle(isOn: $hideEventAndCategoryControls) {
+                            Text("Hide Equipped Section")
+                                .foregroundColor(.white)
+                        }
+                        .onChange(of: hideEventAndCategoryControls) {
+                            SettingsManager.setHideEventAndCategoryControls(hideEventAndCategoryControls)
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
