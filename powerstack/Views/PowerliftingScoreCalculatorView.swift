@@ -14,11 +14,7 @@ struct PowerliftingScoreCalculatorView: View {
     @State private var event: String = "CL"
     @State private var category: String = "PL"
     
-    @State private var dots: String = ""
-    @State private var oldWilks: String = ""
-    @State private var newWilks: String = ""
-    @State private var ipf: String = ""
-    @State private var ipfGL: String = ""
+    @State private var scores: [String: String] = [:]
     
     var body: some View {
         ZStack {
@@ -66,7 +62,7 @@ struct PowerliftingScoreCalculatorView: View {
                 .padding(.top, 5)
                 
                 VStack {
-                    if !dots.isEmpty {
+                    if let dots = scores["dots"], !dots.isEmpty {
                         Rectangle()
                             .frame(maxWidth: .infinity, maxHeight: 100)
                             .foregroundColor(Color.clear)
@@ -88,7 +84,7 @@ struct PowerliftingScoreCalculatorView: View {
                             )
                     }
                     
-                    if !oldWilks.isEmpty && !newWilks.isEmpty {
+                    if let oldWilks = scores["oldWilks"], let newWilks = scores["newWilks"], !oldWilks.isEmpty && !newWilks.isEmpty {
                         HStack {
                             Rectangle()
                                 .frame(maxWidth: .infinity, maxHeight: 100)
@@ -132,7 +128,7 @@ struct PowerliftingScoreCalculatorView: View {
                         }
                     }
                     
-                    if !ipf.isEmpty && !ipfGL.isEmpty {
+                    if let ipf = scores["ipf"], let ipfGL = scores["ipfGL"], !ipf.isEmpty && !ipfGL.isEmpty {
                         HStack {
                             Rectangle()
                                 .frame(maxWidth: .infinity, maxHeight: 100)
@@ -204,11 +200,9 @@ struct PowerliftingScoreCalculatorView: View {
     }
     
     private func update() {
-        dots = calculate(.dots)
-        oldWilks = calculate(.oldWilks)
-        newWilks = calculate(.newWilks)
-        ipf = calculate(.ipf)
-        ipfGL = calculate(.ipfGL)
+        for type in CalculationType.allCases {
+            scores[String(describing: type)] = calculate(type)
+        }
     }
     
     private func calculate(_ type: CalculationType) -> String {
@@ -318,7 +312,7 @@ enum Gender {
     }
 }
 
-enum CalculationType {
+enum CalculationType: CaseIterable {
     case dots, oldWilks, newWilks, ipf, ipfGL
     
     func parameters(for gender: Gender) -> (coefficients: [Double], weightRange: ClosedRange<Double>, numerator: Double)? {
