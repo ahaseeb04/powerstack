@@ -42,29 +42,7 @@ struct PowerliftingScoreCalculatorView: View {
                     }
                 }
                 
-                if let dots = scores["dots"],
-                   let oldWilks = scores["oldWilks"],
-                   let newWilks = scores["newWilks"],
-                   let IPF = scores["IPF"],
-                   let IPFGL = scores["IPFGL"],
-                   !dots.isEmpty,
-                   !oldWilks.isEmpty, !newWilks.isEmpty,
-                   !IPF.isEmpty, !IPFGL.isEmpty {
-                    VStack {
-                        ScoreBox(title: "Dots", score: dots)
-                        
-                        HStack {
-                            ScoreBox(title: "Old Wilks", score: oldWilks)
-                            ScoreBox(title: "Wilks2", score: newWilks)
-                        }
-                        
-                        HStack {
-                            ScoreBox(title: "IPF", score: IPF)
-                            ScoreBox(title: "IPF GL", score: IPFGL)
-                        }
-                    }
-                    .padding(.top, 20)
-                }
+                ResultView(scores: scores)
                 
                 Spacer()
             }
@@ -122,28 +100,6 @@ struct PowerliftingScoreCalculatorView: View {
         .onChange(of: category) {
             update()
         }
-    }
-    
-    private func ScoreBox(title: String, score: String) -> some View {
-        Rectangle()
-            .frame(maxWidth: .infinity, maxHeight: 100)
-            .foregroundColor(Color.clear)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-            )
-            .overlay(
-                VStack {
-                    Text(title)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.5))
-                        .textCase(.uppercase)
-                    
-                    Text(score)
-                        .foregroundColor(.white)
-                        .font(.headline)
-                }
-            )
     }
     
     private func update() {
@@ -233,6 +189,58 @@ struct PowerliftingScoreCalculatorView: View {
         let conversionFactor = SettingsManager.getScoreCalculatorWeightUnit() == SettingsManager.unitPounds ? 2.2046 : 1.0
         
         return num / conversionFactor
+    }
+}
+
+private struct ResultView: View {
+    var scores: [String: String]
+    
+    var body: some View {
+        if let dots = scores["dots"],
+           let oldWilks = scores["oldWilks"],
+           let newWilks = scores["newWilks"],
+           let IPF = scores["IPF"],
+           let IPFGL = scores["IPFGL"],
+           !dots.isEmpty,
+           !oldWilks.isEmpty, !newWilks.isEmpty,
+           !IPF.isEmpty, !IPFGL.isEmpty {
+            VStack {
+                ScoreBox(title: "Dots", score: dots)
+                
+                HStack {
+                    ScoreBox(title: "Old Wilks", score: oldWilks)
+                    ScoreBox(title: "Wilks2", score: newWilks)
+                }
+                
+                HStack {
+                    ScoreBox(title: "IPF", score: IPF)
+                    ScoreBox(title: "IPF GL", score: IPFGL)
+                }
+            }
+            .padding(.top, 20)
+        }
+    }
+    
+    private func ScoreBox(title: String, score: String) -> some View {
+        Rectangle()
+            .frame(maxWidth: .infinity, maxHeight: 100)
+            .foregroundColor(Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+            )
+            .overlay(
+                VStack {
+                    Text(title)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(Color.white.opacity(0.5))
+                        .textCase(.uppercase)
+                    
+                    Text(score)
+                        .foregroundColor(.white)
+                        .font(.headline)
+                }
+            )
     }
 }
 
