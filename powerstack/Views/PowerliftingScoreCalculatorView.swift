@@ -225,12 +225,12 @@ struct PowerliftingScoreCalculatorView: View {
         return String(format: "%.2f", score)
     }
     
-    private func handleConversion(_ number: Double?) -> Double? {
-        guard let number = number else { return nil }
+    private func handleConversion(_ num: Double?) -> Double? {
+        guard let num = num else { return nil }
     
         let conversionFactor = SettingsManager.getScoreCalculatorWeightUnit() == SettingsManager.unitPounds ? 2.2046 : 1.0
         
-        return number / conversionFactor
+        return num / conversionFactor
     }
 }
 
