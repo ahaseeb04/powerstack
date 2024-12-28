@@ -60,7 +60,7 @@ struct OpenPowerliftingSearchView: View {
             HStack(alignment: .center) {
                 TextField("Enter lifter name", text: $lifterName)
                     .padding()
-                    .background(Color.gray.opacity(0.2))
+                    .background(Color.gray.opacity(0.15))
                     .cornerRadius(10)
                     .disableAutocorrection(true)
                     .onChange(of: lifterName) {
@@ -111,7 +111,7 @@ struct OpenPowerliftingSearchView: View {
         ZStack {
             TextField("Enter lifter name", text: $lifterName)
                 .padding()
-                .background(Color.gray.opacity(0.2))
+                .background(Color.gray.opacity(0.15))
                 .cornerRadius(10)
                 .disableAutocorrection(true)
                 .padding(.horizontal)
@@ -396,7 +396,16 @@ class LifterViewModel: ObservableObject {
     
     func fetchSuggestions() {
         db.collection("lifters").getDocuments { snapshot, error in
-            self.suggestions = snapshot?.documents.compactMap { $0.documentID } ?? []
+            guard let documents = snapshot?.documents else {
+                return
+            }
+            
+            self.suggestions = documents.sorted {
+                let firstDots = (($0.data()["lifter"] as? [String: Any])?["personalBests"] as? [String: Any])?["dots"] as? Double ?? 0
+                let secondDots = (($1.data()["lifter"] as? [String: Any])?["personalBests"] as? [String: Any])?["dots"] as? Double ?? 0
+                
+                return firstDots > secondDots
+            }.map { $0.documentID }
         }
     }
     

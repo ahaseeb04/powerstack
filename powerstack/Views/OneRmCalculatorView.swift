@@ -58,7 +58,7 @@ struct OneRmCalculatorView: View {
         TextField(placeholder, text: text)
             .keyboardType(.decimalPad)
             .padding()
-            .background(Color.gray.opacity(0.2))
+            .background(Color.gray.opacity(0.15))
             .cornerRadius(10)
             .disableAutocorrection(true)
             .onChange(of: text.wrappedValue) {

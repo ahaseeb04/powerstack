@@ -25,10 +25,16 @@ struct PlateCalculatorView: View {
                 CustomTextField()
                 
                 VStack(spacing: 10) {
-                    PoundPlateToggle()
+                    PoundPlatesToggle()
+                    
+                    Divider()
+                    
                     CollarsToggle()
                 }
+                .padding(.horizontal)
                 .padding(.vertical, 10)
+                .background(Color.gray.opacity(0.15))
+                .cornerRadius(10)
                 
                 Spacer()
             }
@@ -63,11 +69,11 @@ struct PlateCalculatorView: View {
         .ignoresSafeArea(.keyboard)
     }
     
-    func CustomTextField() -> some View {
+    private func CustomTextField() -> some View {
         TextField("Enter weight in \(SettingsManager.getWeightUnit())", text: $userInput)
             .keyboardType(.decimalPad)
             .padding()
-            .background(Color.gray.opacity(0.2))
+            .background(Color.gray.opacity(0.15))
             .foregroundColor(.white)
             .cornerRadius(10)
             .onChange(of: userInput) {
@@ -75,7 +81,7 @@ struct PlateCalculatorView: View {
             }
     }
     
-    func PoundPlateToggle() -> some View {
+    private func PoundPlatesToggle() -> some View {
         Toggle(isOn: $poundPlates) {
             Text("\(SettingsManager.unitPounds) Plates")
                 .font(.system(size: 10, weight: .semibold))
@@ -87,9 +93,9 @@ struct PlateCalculatorView: View {
         }
     }
     
-    func CollarsToggle() -> some View {
+    private func CollarsToggle() -> some View {
         Toggle(isOn: $hasCollars) {
-            Text("2.5\(SettingsManager.unitKilograms) Collars")
+            Text("Collars")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.white.opacity(0.5))
                 .textCase(.uppercase)
@@ -99,7 +105,7 @@ struct PlateCalculatorView: View {
         }
     }
     
-    func SaveImageButtonNoPreview() -> some View {
+    private func SaveImageButtonNoPreview() -> some View {
         Button(action: {
             generatePreview()
             saveImage()
@@ -130,7 +136,7 @@ struct PlateCalculatorView: View {
         .padding(.bottom, 50)
     }
     
-    func SaveImageButton() -> some View {
+    private func SaveImageButton() -> some View {
         Button(action: generatePreview) {
             HStack {
                 if saveSuccess {
@@ -164,7 +170,7 @@ struct PlateCalculatorView: View {
         }
     }
     
-    func generatePreview() {
+    private func generatePreview() {
         let view: AnyView = poundPlates
             ? AnyView(BarbellViewPounds(distribution: distribution, showDescription: false))
             : AnyView(BarbellView(distribution: distribution, hasCollars: hasCollars, showDescription: false))
@@ -193,7 +199,7 @@ struct PlateCalculatorView: View {
         UIImageWriteToSavedPhotosAlbum(renderedImage!, nil, nil, nil)
     }
     
-    func updateDistribution() {
+    private func updateDistribution() {
         if let weight = handleConversion(Double(userInput)), weight > 0 {
             saveSuccess = false
             
@@ -206,7 +212,7 @@ struct PlateCalculatorView: View {
         }
     }
     
-    func barbellDistribution(weight: Double, bar: Double) -> [String: Int] {
+    private func barbellDistribution(weight: Double, bar: Double) -> [String: Int] {
         let plates: [(Double, String)] = [
             (25, "red"), (20, "blue"), (15, "yellow"), (10, "green"),
             (5, "white"), (2.5, "black"), (1.25, "silver")
@@ -224,7 +230,7 @@ struct PlateCalculatorView: View {
         }
     }
 
-    func barbellDistributionPounds(weight: Double, bar: Double) -> [String: Int] {
+    private func barbellDistributionPounds(weight: Double, bar: Double) -> [String: Int] {
         let plates: [(Double, String)] = [
             (45, "gray"), (35, "gray"), (25, "gray"), (10, "gray"),
             (5, "gray"), (2.5, "gray")
@@ -361,7 +367,7 @@ struct BarbellView: View {
             }
             .offset(x: -70)
             
-            let weight = "\(formattedWeight(totalWeightInKgs())) kgs / \(formattedWeight(totalWeightInKgs() * 2.2046)) lbs"
+            let weight = "\(formattedWeight(totalWeightInKgs())) \(SettingsManager.unitKilograms) / \(formattedWeight(totalWeightInKgs() * 2.2046)) \(SettingsManager.unitPounds)"
             
             VStack {
                 Spacer()
@@ -489,7 +495,7 @@ struct BarbellViewPounds: View {
             }
             .offset(x: -70)
             
-            let weight = "\(formattedWeight(totalWeightInLbs() / 2.2046)) kgs / \(formattedWeight(totalWeightInLbs())) lbs"
+            let weight = "\(formattedWeight(totalWeightInLbs() / 2.2046)) \(SettingsManager.unitKilograms) / \(formattedWeight(totalWeightInLbs())) \(SettingsManager.unitPounds)"
             
             VStack {
                 Spacer()
