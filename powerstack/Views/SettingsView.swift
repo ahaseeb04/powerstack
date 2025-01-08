@@ -8,13 +8,11 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var hideSaveButton: Bool = SettingsManager.shouldHideSaveButton()
-    @State private var disableImagePreview: Bool = SettingsManager.shouldDisableImagePreview()
-    @State private var disableSearchPrediction: Bool = SettingsManager.shouldDisableSearchPrediction()
-    @State private var selectedUnit: String = SettingsManager.getWeightUnit()
-    @State private var scoreCalculatorSelectedUnit: String = SettingsManager.getScoreCalculatorWeightUnit()
-    @State private var hideEventAndCategoryControls: Bool = SettingsManager.shouldHideEventAndCategoryControls()
-
+    @EnvironmentObject var settingsManager: SettingsManager
+    
+    @State var selectedUnit: String = ""
+    @State var scoreCalculatorWeightUnit: String = ""
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -32,37 +30,40 @@ struct SettingsView: View {
                             }
                             .pickerStyle(SegmentedPickerStyle())
                             .frame(maxWidth: 100)
-                            .onChange(of: selectedUnit) {
-                                SettingsManager.setWeightUnit(selectedUnit)
+                            .onAppear {
+                                selectedUnit = settingsManager.weightUnit
+                            }
+                            .onChange(of: selectedUnit) { oldValue, newValue in
+                                settingsManager.weightUnit = newValue
                             }
                         }
                         
-                        Toggle(isOn: $hideSaveButton) {
+                        Toggle(isOn: $settingsManager.hideSaveButton) {
                             Text("Hide Save to Camera Roll Button")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: hideSaveButton) {
-                            SettingsManager.setHideSaveButton(hideSaveButton)
+                        .onChange(of: settingsManager.hideSaveButton) { oldValue, newValue in
+                            settingsManager.hideSaveButton = newValue
                         }
                         
-                        Toggle(isOn: $disableImagePreview) {
+                        Toggle(isOn: $settingsManager.disableImagePreview) {
                             Text("Disable 2-Step Confirmation")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: disableImagePreview) {
-                            SettingsManager.setDisableImagePreview(disableImagePreview)
+                        .onChange(of: settingsManager.disableImagePreview) { oldValue, newValue in
+                            settingsManager.disableImagePreview = newValue
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
                     .foregroundColor(.white)
                     
                     Section(header: Text("OpenPowerlifting Search")) {
-                        Toggle(isOn: $disableSearchPrediction) {
+                        Toggle(isOn: $settingsManager.disableSearchPrediction) {
                             Text("Disable Predictive Text")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: disableSearchPrediction) {
-                            SettingsManager.setDisableSearchPrediction(disableSearchPrediction)
+                        .onChange(of: settingsManager.disableSearchPrediction) { oldValue, newValue in
+                            settingsManager.disableSearchPrediction = newValue
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
@@ -73,23 +74,26 @@ struct SettingsView: View {
                             Text("Weight Input")
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
-                            Picker("Weight Unit", selection: $scoreCalculatorSelectedUnit) {
+                            Picker("Weight Unit", selection: $scoreCalculatorWeightUnit) {
                                 Text(SettingsManager.unitPounds).tag(SettingsManager.unitPounds)
                                 Text(SettingsManager.unitKilograms).tag(SettingsManager.unitKilograms)
                             }
                             .pickerStyle(SegmentedPickerStyle())
                             .frame(maxWidth: 100)
-                            .onChange(of: scoreCalculatorSelectedUnit) {
-                                SettingsManager.setScoreCalculatorWeightUnit(scoreCalculatorSelectedUnit)
+                            .onAppear {
+                                scoreCalculatorWeightUnit = settingsManager.scoreCalculatorWeightUnit
+                            }
+                            .onChange(of: scoreCalculatorWeightUnit) { oldValue, newValue in
+                                settingsManager.scoreCalculatorWeightUnit = newValue
                             }
                         }
                         
-                        Toggle(isOn: $hideEventAndCategoryControls) {
+                        Toggle(isOn: $settingsManager.hideEventAndCategoryControls) {
                             Text("Hide Equipped/Bench-Only Switch")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: hideEventAndCategoryControls) {
-                            SettingsManager.setHideEventAndCategoryControls(hideEventAndCategoryControls)
+                        .onChange(of: settingsManager.hideEventAndCategoryControls) { oldValue, newValue in
+                            settingsManager.hideEventAndCategoryControls = newValue
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))

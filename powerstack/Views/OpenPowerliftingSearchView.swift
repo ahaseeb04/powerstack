@@ -11,6 +11,8 @@ import Foundation
 import FirebaseFirestore
 
 struct OpenPowerliftingSearchView: View {
+    @EnvironmentObject var settingsManager: SettingsManager
+    
     @State private var debounceTimer: Timer? = nil
     @StateObject public var viewModel = LifterViewModel()
     
@@ -27,7 +29,7 @@ struct OpenPowerliftingSearchView: View {
             
             ScrollView {
                 VStack {
-                    if SettingsManager.shouldDisableSearchPrediction() {
+                    if settingsManager.disableSearchPrediction {
                         searchTextFieldNoPrediction
                     } else {
                         searchTextField
@@ -625,7 +627,7 @@ class LifterViewModel: ObservableObject {
             }
             
             self.suggestions = documents
-                .sorted { getValue(from: $0, key: "dots") > getValue(from: $1, key: "dots") }
+                .sorted { getValue(from: $0, key: "personalBests.dots") > getValue(from: $1, key: "personalBests.dots") }
                 .map { $0.documentID }
         }
     }
@@ -641,10 +643,14 @@ class LifterViewModel: ObservableObject {
     }
     
     private func getValue(from document: QueryDocumentSnapshot, key: String) -> Double {
-        let data = document.data()["lifter"] as? [String: Any]
-        let personalBests = data?["personalBests"] as? [String: Any]
+        let parts = key.split(separator: ".").map { String($0) }
         
-        return personalBests?[key] as? Double ?? 0
+        guard let data = (document.data()["lifter"] as? [String: Any])?[parts.first ?? key] as? [String: Any],
+              let value = data[parts.last ?? key] as? Double else {
+            return 0
+        }
+        
+        return value
     }
 }
 
