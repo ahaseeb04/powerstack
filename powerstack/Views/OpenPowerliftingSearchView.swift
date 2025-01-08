@@ -59,10 +59,7 @@ struct OpenPowerliftingSearchView: View {
         ZStack(alignment: .leading) {
             HStack(alignment: .center) {
                 TextField("Enter lifter name", text: $lifterName)
-                    .padding()
-                    .background(Color.gray.opacity(0.15))
-                    .cornerRadius(10)
-                    .disableAutocorrection(true)
+                    .modifier(CustomTextFieldModifier())
                     .onChange(of: lifterName) {
                         if lifterName.isEmpty {
                             viewModel.reset()
@@ -110,10 +107,7 @@ struct OpenPowerliftingSearchView: View {
     private var searchTextFieldNoPrediction: some View {
         ZStack {
             TextField("Enter lifter name", text: $lifterName)
-                .padding()
-                .background(Color.gray.opacity(0.15))
-                .cornerRadius(10)
-                .disableAutocorrection(true)
+                .modifier(CustomTextFieldModifier())
                 .padding(.horizontal)
                 .onChange(of: lifterName) {
                     if lifterName.isEmpty {
@@ -394,28 +388,16 @@ class LifterViewModel: ObservableObject {
     
     private var db = Firestore.firestore()
     
-    func fetchSuggestions() {
-        db.collection("lifters").getDocuments { snapshot, error in
-            guard let documents = snapshot?.documents else {
-                return
-            }
-            
-            self.suggestions = documents.sorted {
-                let firstDots = (($0.data()["lifter"] as? [String: Any])?["personalBests"] as? [String: Any])?["dots"] as? Double ?? 0
-                let secondDots = (($1.data()["lifter"] as? [String: Any])?["personalBests"] as? [String: Any])?["dots"] as? Double ?? 0
-                
-                return firstDots > secondDots
-            }.map { $0.documentID }
-        }
-    }
-    
     func fetchLifters(for lifterName: String) {
         guard !lifterName.isEmpty, lifterName.split(separator: " ").count >= 2 else {
             self.resourceFound = false
             return
         }
         
-        let formattedName = lifterName.replacingOccurrences(of: " ", with: "").lowercased()
+        let formattedName = lifterName
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "#", with: "")
+            .lowercased()
         
         guard let url = URL(string: "https://www.openpowerlifting.org/api/liftercsv/\(formattedName)") else {
             self.errorMessage = "Invalid URL"
@@ -636,6 +618,18 @@ class LifterViewModel: ObservableObject {
         }
     }
     
+    func fetchSuggestions() {
+        db.collection("lifters").getDocuments { [self] snapshot, error in
+            guard let documents = snapshot?.documents else {
+                return
+            }
+            
+            self.suggestions = documents
+                .sorted { getValue(from: $0, key: "dots") > getValue(from: $1, key: "dots") }
+                .map { $0.documentID }
+        }
+    }
+    
     func computeProgress(first: Double, best: Double) -> Int {
         guard first > 0 else { return 0 }
         
@@ -644,6 +638,13 @@ class LifterViewModel: ObservableObject {
     
     func reset() {
         self.lifters = []
+    }
+    
+    private func getValue(from document: QueryDocumentSnapshot, key: String) -> Double {
+        let data = document.data()["lifter"] as? [String: Any]
+        let personalBests = data?["personalBests"] as? [String: Any]
+        
+        return personalBests?[key] as? Double ?? 0
     }
 }
 

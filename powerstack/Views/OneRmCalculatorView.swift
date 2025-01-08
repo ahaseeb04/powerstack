@@ -57,10 +57,7 @@ struct OneRmCalculatorView: View {
     private func CustomTextField(placeholder: String, text: Binding<String>) -> some View {
         TextField(placeholder, text: text)
             .keyboardType(.decimalPad)
-            .padding()
-            .background(Color.gray.opacity(0.15))
-            .cornerRadius(10)
-            .disableAutocorrection(true)
+            .modifier(CustomTextFieldModifier())
             .onChange(of: text.wrappedValue) {
                 calculateOneRepMax()
             }

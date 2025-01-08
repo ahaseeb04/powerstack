@@ -72,10 +72,7 @@ struct PlateCalculatorView: View {
     private func CustomTextField() -> some View {
         TextField("Enter weight in \(SettingsManager.getWeightUnit())", text: $userInput)
             .keyboardType(.decimalPad)
-            .padding()
-            .background(Color.gray.opacity(0.15))
-            .foregroundColor(.white)
-            .cornerRadius(10)
+            .modifier(CustomTextFieldModifier())
             .onChange(of: userInput) {
                 updateDistribution()
             }
