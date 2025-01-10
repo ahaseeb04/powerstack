@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PlateCalculatorView: View {
-    @EnvironmentObject var settingsManager: SettingsManager
+    @EnvironmentObject var settings: SettingsManager
     
     @State private var userInput: String = ""
     @State private var weightInKgs: Double = 20
@@ -55,11 +55,11 @@ struct PlateCalculatorView: View {
                 Spacer()
             }
             
-            if !distribution.isEmpty && !settingsManager.hideSaveButton {
+            if !distribution.isEmpty && !settings.hideSaveButton {
                 VStack {
                     Spacer()
                     
-                    if settingsManager.disableImagePreview {
+                    if settings.disableImagePreview {
                         SaveImageButtonNoPreview()
                     } else {
                         SaveImageButton()
@@ -69,13 +69,16 @@ struct PlateCalculatorView: View {
         }
         .dismissKeyboardOnTap()
         .ignoresSafeArea(.keyboard)
-        .onChange(of: settingsManager.disableImagePreview) {
+        .onChange(of: settings.weightUnit) {
+            updateDistribution()
+        }
+        .onChange(of: settings.disableImagePreview) {
             renderedImage = nil
         }
     }
     
     private func CustomTextField() -> some View {
-        TextField("Enter weight in \(settingsManager.weightUnit)", text: $userInput)
+        TextField("Enter weight in \(settings.weightUnit)", text: $userInput)
             .keyboardType(.decimalPad)
             .modifier(CustomTextFieldModifier())
             .onChange(of: userInput) {
@@ -255,7 +258,7 @@ struct PlateCalculatorView: View {
     private func handleConversion(_ num: Double?) -> Double? {
         guard let num = num else { return nil }
     
-        let weightUnit = settingsManager.weightUnit
+        let weightUnit = settings.weightUnit
 
         if (weightUnit == SettingsManager.unitPounds && !poundPlates) || (weightUnit == SettingsManager.unitKilograms && poundPlates) {
             return weightUnit == SettingsManager.unitPounds ? num / 2.2046 : num * 2.2046

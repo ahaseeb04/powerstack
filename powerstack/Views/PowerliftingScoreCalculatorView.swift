@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PowerliftingScoreCalculatorView: View {
-    @EnvironmentObject var settingsManager: SettingsManager
+    @EnvironmentObject var settings: SettingsManager
     
     @State private var total: String = ""
     @State private var bodyweight: String = ""
@@ -24,19 +24,19 @@ struct PowerliftingScoreCalculatorView: View {
             
             VStack {
                 HStack(spacing: 10) {
-                    CustomTextField(placeholder: "Total (\(settingsManager.scoreCalculatorWeightUnit))", text: $total)
+                    CustomTextField(placeholder: "Total (\(settings.scoreCalculatorWeightUnit))", text: $total)
                     
                     Image(systemName: "at")
                         .foregroundColor(Color.white.opacity(0.5))
                     
-                    CustomTextField(placeholder: "Bodyweight (\(settingsManager.scoreCalculatorWeightUnit))", text: $bodyweight)
+                    CustomTextField(placeholder: "Bodyweight (\(settings.scoreCalculatorWeightUnit))", text: $bodyweight)
                 }
                 .padding(.bottom, 10)
                 
                 Group {
                     GenderPicker()
                     
-                    if !settingsManager.hideEventAndCategoryControls {
+                    if !settings.hideEventAndCategoryControls {
                         HStack {
                             EventPicker()
                             CategoryPicker()
@@ -74,6 +74,9 @@ struct PowerliftingScoreCalculatorView: View {
         }
         .dismissKeyboardOnTap()
         .ignoresSafeArea(.keyboard)
+        .onChange(of: settings.scoreCalculatorWeightUnit) {
+            update()
+        }
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text("Powerlifting Score Calculator")
@@ -229,7 +232,7 @@ struct PowerliftingScoreCalculatorView: View {
     private func handleConversion(_ num: Double?) -> Double? {
         guard let num = num else { return nil }
     
-        let conversionFactor = settingsManager.scoreCalculatorWeightUnit == SettingsManager.unitPounds ? 2.2046 : 1.0
+        let conversionFactor = settings.scoreCalculatorWeightUnit == SettingsManager.unitPounds ? 2.2046 : 1.0
         
         return num / conversionFactor
     }

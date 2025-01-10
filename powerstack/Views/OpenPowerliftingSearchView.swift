@@ -11,10 +11,10 @@ import Foundation
 import FirebaseFirestore
 
 struct OpenPowerliftingSearchView: View {
-    @EnvironmentObject var settingsManager: SettingsManager
+    @EnvironmentObject var settings: SettingsManager
     
     @State private var debounceTimer: Timer? = nil
-    @StateObject public var viewModel = LifterViewModel()
+    @StateObject private var viewModel = LifterViewModel()
     
     @State private var lifterName: String = ""
     
@@ -29,7 +29,7 @@ struct OpenPowerliftingSearchView: View {
             
             ScrollView {
                 VStack {
-                    if settingsManager.disableSearchPrediction {
+                    if settings.disableSearchPrediction {
                         searchTextFieldNoPrediction
                     } else {
                         searchTextField

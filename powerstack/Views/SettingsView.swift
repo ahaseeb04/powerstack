@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @EnvironmentObject var settingsManager: SettingsManager
+    @EnvironmentObject var settings: SettingsManager
     
     @State var selectedUnit: String = ""
     @State var scoreCalculatorWeightUnit: String = ""
@@ -31,39 +31,39 @@ struct SettingsView: View {
                             .pickerStyle(SegmentedPickerStyle())
                             .frame(maxWidth: 100)
                             .onAppear {
-                                selectedUnit = settingsManager.weightUnit
+                                selectedUnit = settings.weightUnit
                             }
                             .onChange(of: selectedUnit) { oldValue, newValue in
-                                settingsManager.weightUnit = newValue
+                                settings.weightUnit = newValue
                             }
                         }
                         
-                        Toggle(isOn: $settingsManager.hideSaveButton) {
+                        Toggle(isOn: $settings.hideSaveButton) {
                             Text("Hide Save to Camera Roll Button")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: settingsManager.hideSaveButton) { oldValue, newValue in
-                            settingsManager.hideSaveButton = newValue
+                        .onChange(of: settings.hideSaveButton) { oldValue, newValue in
+                            settings.hideSaveButton = newValue
                         }
                         
-                        Toggle(isOn: $settingsManager.disableImagePreview) {
+                        Toggle(isOn: $settings.disableImagePreview) {
                             Text("Disable 2-Step Confirmation")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: settingsManager.disableImagePreview) { oldValue, newValue in
-                            settingsManager.disableImagePreview = newValue
+                        .onChange(of: settings.disableImagePreview) { oldValue, newValue in
+                            settings.disableImagePreview = newValue
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
                     .foregroundColor(.white)
                     
                     Section(header: Text("OpenPowerlifting Search")) {
-                        Toggle(isOn: $settingsManager.disableSearchPrediction) {
+                        Toggle(isOn: $settings.disableSearchPrediction) {
                             Text("Disable Predictive Text")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: settingsManager.disableSearchPrediction) { oldValue, newValue in
-                            settingsManager.disableSearchPrediction = newValue
+                        .onChange(of: settings.disableSearchPrediction) { oldValue, newValue in
+                            settings.disableSearchPrediction = newValue
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
@@ -81,19 +81,19 @@ struct SettingsView: View {
                             .pickerStyle(SegmentedPickerStyle())
                             .frame(maxWidth: 100)
                             .onAppear {
-                                scoreCalculatorWeightUnit = settingsManager.scoreCalculatorWeightUnit
+                                scoreCalculatorWeightUnit = settings.scoreCalculatorWeightUnit
                             }
                             .onChange(of: scoreCalculatorWeightUnit) { oldValue, newValue in
-                                settingsManager.scoreCalculatorWeightUnit = newValue
+                                settings.scoreCalculatorWeightUnit = newValue
                             }
                         }
                         
-                        Toggle(isOn: $settingsManager.hideEventAndCategoryControls) {
+                        Toggle(isOn: $settings.hideEventAndCategoryControls) {
                             Text("Hide Equipped/Bench-Only Switch")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: settingsManager.hideEventAndCategoryControls) { oldValue, newValue in
-                            settingsManager.hideEventAndCategoryControls = newValue
+                        .onChange(of: settings.hideEventAndCategoryControls) { oldValue, newValue in
+                            settings.hideEventAndCategoryControls = newValue
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
