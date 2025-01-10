@@ -17,6 +17,7 @@ struct OpenPowerliftingSearchView: View {
     @StateObject private var viewModel = LifterViewModel()
     
     @State private var lifterName: String = ""
+    @State private var pounds: Bool = false
     
     @State private var suggestion: String? = nil
     @State private var filteredSuggestions: [String] = []
@@ -36,7 +37,26 @@ struct OpenPowerliftingSearchView: View {
                     }
                     
                     if lifterName.count > 2 && viewModel.resourceFound {
-                        lifterPersonalBestsView
+                        if viewModel.lifters.first != nil {
+                            Toggle(isOn: $pounds) {
+                                Text("\(SettingsManager.unitPounds)")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.5))
+                                    .textCase(.uppercase)
+                            }
+                            .padding(.horizontal)
+                            .padding(.vertical, 10)
+                            .background(Color.gray.opacity(0.15))
+                            .cornerRadius(10)
+                            .padding(.horizontal)
+                        }
+                        
+                        if pounds {
+                            lifterPersonalBestsViewPounds
+                        } else {
+                            lifterPersonalBestsView
+                        }
+                        
                         lifterProgressView
                         lifterCompetitionsView
                     }
@@ -91,8 +111,6 @@ struct OpenPowerliftingSearchView: View {
                                 }
                             }
                     )
-                
-                Spacer()
             }
             .padding(.horizontal)
             
@@ -135,6 +153,23 @@ struct OpenPowerliftingSearchView: View {
                         (label: "Bench", value: formatValue(lifter.personalBests.bench, decimals: 1)),
                         (label: "Deadlift", value: formatValue(lifter.personalBests.deadlift, decimals: 1)),
                         (label: "Total", value: formatValue(lifter.personalBests.total, decimals: 1)),
+                        (label: "Dots", value: formatValue(lifter.personalBests.dots, decimals: 2))
+                    ]
+                )
+            }
+        }
+    }
+    
+    private var lifterPersonalBestsViewPounds: some View {
+        Group {
+            if let lifter = viewModel.lifters.first {
+                ScoreCard(
+                    title: "Personal Bests",
+                    scores: [
+                        (label: "Squat", value: formatValue(lifter.personalBests.squat * 2.2046, decimals: 1)),
+                        (label: "Bench", value: formatValue(lifter.personalBests.bench * 2.2046, decimals: 1)),
+                        (label: "Deadlift", value: formatValue(lifter.personalBests.deadlift * 2.2046, decimals: 1)),
+                        (label: "Total", value: formatValue(lifter.personalBests.total * 2.2046, decimals: 1)),
                         (label: "Dots", value: formatValue(lifter.personalBests.dots, decimals: 2))
                     ]
                 )
@@ -186,8 +221,15 @@ struct OpenPowerliftingSearchView: View {
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
+                    
+                    let total = pounds ? competition.total * 2.2046 : competition.total
+                    let bodyweight = pounds ? competition.bodyweight * 2.2046 : competition.bodyweight
+                    let formattedTotal = String(format: "%.1f", total).replacingOccurrences(of: ".0", with: "")
+                    let formattedBodyweight = String(format: "%.2f", bodyweight)
+                    let placing = ordinal(of: competition.placing)
+                    let placeEmoji = getPlaceEmoji(for: competition.placing)
 
-                    Text("\(String(format: "%.1f", competition.total).replacingOccurrences(of: ".0", with: "")) @ \(String(format: "%.2f", competition.bodyweight)), \(ordinal(of: competition.placing)) Place \(getPlaceEmoji(for: competition.placing))")
+                    Text("\(formattedTotal) @ \(formattedBodyweight), \(placing) Place \(placeEmoji)")
                         .font(.subheadline)
                         .foregroundColor(.gray)
 
@@ -258,11 +300,12 @@ struct OpenPowerliftingSearchView: View {
         return attempts.compactMap { attempt -> String? in
             guard let attemptValue = attempt else { return nil }
             
-            var formattedAttempt = String(format: "%.1f", attemptValue).replacingOccurrences(of: ".0", with: "")
+            var formattedAttempt = String(format: "%.1f", pounds ? attemptValue * 2.2046 : attemptValue).replacingOccurrences(of: ".0", with: "")
             
             if formattedAttempt.hasPrefix("-") {
                 formattedAttempt = formattedAttempt.replacingOccurrences(of: "-", with: "") + "x"
             }
+            
             return formattedAttempt
         }.joined(separator: "/")
     }
