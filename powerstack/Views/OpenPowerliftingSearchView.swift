@@ -51,12 +51,7 @@ struct OpenPowerliftingSearchView: View {
                             .padding(.horizontal)
                         }
                         
-                        if pounds {
-                            lifterPersonalBestsViewPounds
-                        } else {
-                            lifterPersonalBestsView
-                        }
-                        
+                        lifterPersonalBestsView
                         lifterProgressView
                         lifterCompetitionsView
                     }
@@ -146,31 +141,22 @@ struct OpenPowerliftingSearchView: View {
     private var lifterPersonalBestsView: some View {
         Group {
             if let lifter = viewModel.lifters.first {
-                ScoreCard(
-                    title: "Personal Bests",
-                    scores: [
-                        (label: "Squat", value: formatValue(lifter.personalBests.squat, decimals: 1)),
-                        (label: "Bench", value: formatValue(lifter.personalBests.bench, decimals: 1)),
-                        (label: "Deadlift", value: formatValue(lifter.personalBests.deadlift, decimals: 1)),
-                        (label: "Total", value: formatValue(lifter.personalBests.total, decimals: 1)),
-                        (label: "Dots", value: formatValue(lifter.personalBests.dots, decimals: 2))
-                    ]
+                let (squat, bench, deadlift, total, dots) = (
+                    pounds ? lifter.personalBests.squat * 2.2046 : lifter.personalBests.squat,
+                    pounds ? lifter.personalBests.bench * 2.2046 : lifter.personalBests.bench,
+                    pounds ? lifter.personalBests.deadlift * 2.2046 : lifter.personalBests.deadlift,
+                    pounds ? lifter.personalBests.total * 2.2046 : lifter.personalBests.total,
+                    lifter.personalBests.dots
                 )
-            }
-        }
-    }
-    
-    private var lifterPersonalBestsViewPounds: some View {
-        Group {
-            if let lifter = viewModel.lifters.first {
-                ScoreCard(
+                
+                Card(
                     title: "Personal Bests",
-                    scores: [
-                        (label: "Squat", value: formatValue(lifter.personalBests.squat * 2.2046, decimals: 1)),
-                        (label: "Bench", value: formatValue(lifter.personalBests.bench * 2.2046, decimals: 1)),
-                        (label: "Deadlift", value: formatValue(lifter.personalBests.deadlift * 2.2046, decimals: 1)),
-                        (label: "Total", value: formatValue(lifter.personalBests.total * 2.2046, decimals: 1)),
-                        (label: "Dots", value: formatValue(lifter.personalBests.dots, decimals: 2))
+                    data: [
+                        (label: "Squat", value: formatValue(squat, decimals: 1)),
+                        (label: "Bench", value: formatValue(bench, decimals: 1)),
+                        (label: "Deadlift", value: formatValue(deadlift, decimals: 1)),
+                        (label: "Total", value: formatValue(total, decimals: 1)),
+                        (label: "Dots", value: formatValue(dots, decimals: 2))
                     ]
                 )
             }
@@ -180,14 +166,22 @@ struct OpenPowerliftingSearchView: View {
     private var lifterProgressView: some View {
         Group {
             if let lifter = viewModel.lifters.first, lifter.competitions.count > 1 {
-                ScoreCard(
+                let (squat, bench, deadlift, total, dots) = (
+                    lifter.progress.squat,
+                    lifter.progress.bench,
+                    lifter.progress.deadlift,
+                    lifter.progress.total,
+                    lifter.progress.dots
+                )
+                
+                Card(
                     title: "Progress",
-                    scores: [
-                        (label: "Squat", value: "\(lifter.progress.squat)%"),
-                        (label: "Bench", value: "\(lifter.progress.bench)%"),
-                        (label: "Deadlift", value: "\(lifter.progress.deadlift)%"),
-                        (label: "Total", value: "\(lifter.progress.total)%"),
-                        (label: "Dots", value: "\(lifter.progress.dots)%")
+                    data: [
+                        (label: "Squat", value: "\(squat)%"),
+                        (label: "Bench", value: "\(bench)%"),
+                        (label: "Deadlift", value: "\(deadlift)%"),
+                        (label: "Total", value: "\(total)%"),
+                        (label: "Dots", value: "\(dots)%")
                     ]
                 )
             }
@@ -322,9 +316,9 @@ struct OpenPowerliftingSearchView: View {
     }
 }
 
-struct ScoreCard: View {
+struct Card: View {
     var title: String
-    var scores: [(label: String, value: String)]
+    var data: [(label: String, value: String)]
     
     var body: some View {
         VStack(spacing: 10) {
@@ -335,12 +329,12 @@ struct ScoreCard: View {
                 .padding()
             
             HStack(spacing: 0) {
-                ForEach(scores, id: \.label) { score in
+                ForEach(data, id: \.label) { item in
                     VStack {
-                        Text(score.label)
+                        Text(item.label)
                             .font(.caption)
                             .foregroundColor(.gray)
-                        Text(score.value)
+                        Text(item.value)
                             .foregroundColor(.white)
                     }
                     .frame(maxWidth: .infinity)
