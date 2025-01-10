@@ -128,69 +128,16 @@ struct OpenPowerliftingSearchView: View {
     private var lifterPersonalBestsView: some View {
         Group {
             if let lifter = viewModel.lifters.first {
-                VStack(spacing: 10) {
-                    Text("Personal Bests")
-                        .font(.system(size: 24))
-                        .bold()
-                        .foregroundColor(.white)
-                        .padding()
-                    
-                    HStack {
-                        Spacer()
-                        VStack {
-                            Text("Squat")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(String(format: "%.1f", lifter.personalBests.squat).replacingOccurrences(of: ".0", with: ""))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Bench")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(String(format: "%.1f", lifter.personalBests.bench).replacingOccurrences(of: ".0", with: ""))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Deadlift")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(String(format: "%.1f", lifter.personalBests.deadlift).replacingOccurrences(of: ".0", with: ""))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Total")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(String(format: "%.1f", lifter.personalBests.total).replacingOccurrences(of: ".0", with: ""))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Dots")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(String(format: "%.2f", lifter.personalBests.dots))
-                                .foregroundColor(.white)
-                        }
-                        Spacer()
-                    }
-                    .padding()
-                    .background(Color.black)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                    )
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-                }
+                ScoreCard(
+                    title: "Personal Bests",
+                    scores: [
+                        (label: "Squat", value: formatValue(lifter.personalBests.squat, decimals: 1)),
+                        (label: "Bench", value: formatValue(lifter.personalBests.bench, decimals: 1)),
+                        (label: "Deadlift", value: formatValue(lifter.personalBests.deadlift, decimals: 1)),
+                        (label: "Total", value: formatValue(lifter.personalBests.total, decimals: 1)),
+                        (label: "Dots", value: formatValue(lifter.personalBests.dots, decimals: 2))
+                    ]
+                )
             }
         }
     }
@@ -198,70 +145,16 @@ struct OpenPowerliftingSearchView: View {
     private var lifterProgressView: some View {
         Group {
             if let lifter = viewModel.lifters.first, lifter.competitions.count > 1 {
-                VStack(spacing: 10) {
-                    Text("Progress")
-                        .font(.system(size: 24))
-                        .bold()
-                        .foregroundColor(.white)
-                        .padding()
-                    
-                    HStack {
-                        Spacer()
-                        VStack {
-                            Text("Squat")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            
-                            Text("\(lifter.progress.squat)%")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Bench")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("\(lifter.progress.bench)%")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Deadlift")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("\(lifter.progress.deadlift)%")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Total")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("\(lifter.progress.total)%")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Dots")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("\(lifter.progress.dots)%")
-                                .foregroundColor(.white)
-                        }
-                        Spacer()
-                    }
-                    .padding()
-                    .background(Color.black)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                    )
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-                }
+                ScoreCard(
+                    title: "Progress",
+                    scores: [
+                        (label: "Squat", value: "\(lifter.progress.squat)%"),
+                        (label: "Bench", value: "\(lifter.progress.bench)%"),
+                        (label: "Deadlift", value: "\(lifter.progress.deadlift)%"),
+                        (label: "Total", value: "\(lifter.progress.total)%"),
+                        (label: "Dots", value: "\(lifter.progress.dots)%")
+                    ]
+                )
             }
         }
     }
@@ -356,6 +249,11 @@ struct OpenPowerliftingSearchView: View {
         }
     }
     
+    private func formatValue(_ value: Double, decimals: Int) -> String {
+        let formatted = String(format: "%.\(decimals)f", value)
+        return decimals == 1 ? formatted.replacingOccurrences(of: ".0", with: "") : formatted
+    }
+    
     private func formattedAttempts(for attempts: [Double?]) -> String {
         return attempts.compactMap { attempt -> String? in
             guard let attemptValue = attempt else { return nil }
@@ -381,6 +279,41 @@ struct OpenPowerliftingSearchView: View {
     }
 }
 
+struct ScoreCard: View {
+    var title: String
+    var scores: [(label: String, value: String)]
+    
+    var body: some View {
+        VStack(spacing: 10) {
+            Text(title)
+                .font(.system(size: 24))
+                .bold()
+                .foregroundColor(.white)
+                .padding()
+            
+            HStack(spacing: 0) {
+                ForEach(scores, id: \.label) { score in
+                    VStack {
+                        Text(score.label)
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        Text(score.value)
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding()
+            .background(.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+            )
+            .cornerRadius(10)
+            .padding(.horizontal)
+        }
+    }
+}
 
 class LifterViewModel: ObservableObject {
     @Published var lifters: [Lifter] = []
