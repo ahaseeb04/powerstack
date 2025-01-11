@@ -11,15 +11,20 @@ import Foundation
 import FirebaseFirestore
 
 struct OpenPowerliftingSearchView: View {
+    @EnvironmentObject var settings: SettingsManager
+    
     @State private var debounceTimer: Timer? = nil
-    @StateObject public var viewModel = LifterViewModel()
+    @StateObject private var viewModel = LifterViewModel()
     
     @State private var lifterName: String = ""
+    @AppStorage("openPowerliftingSearchPounds") private var pounds: Bool = false
     
     @State private var suggestion: String? = nil
     @State private var filteredSuggestions: [String] = []
     
     @State private var invoked: Bool = false
+    
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         ZStack {
@@ -27,13 +32,27 @@ struct OpenPowerliftingSearchView: View {
             
             ScrollView {
                 VStack {
-                    if SettingsManager.shouldDisableSearchPrediction() {
+                    if settings.disableSearchPrediction {
                         searchTextFieldNoPrediction
                     } else {
                         searchTextField
                     }
                     
                     if lifterName.count > 2 && viewModel.resourceFound {
+                        if viewModel.lifters.first != nil {
+                            Toggle(isOn: $pounds) {
+                                Text("\(SettingsManager.unitPounds)")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.5))
+                                    .textCase(.uppercase)
+                            }
+                            .padding(.horizontal)
+                            .padding(.vertical, 10)
+                            .background(Color.gray.opacity(0.15))
+                            .cornerRadius(10)
+                            .padding(.horizontal)
+                        }
+                        
                         lifterPersonalBestsView
                         lifterProgressView
                         lifterCompetitionsView
@@ -52,6 +71,9 @@ struct OpenPowerliftingSearchView: View {
         }
         .onAppear {
             viewModel.fetchSuggestions()
+        }
+        .onLeftSwipe {
+            dismiss()
         }
     }
     
@@ -89,8 +111,6 @@ struct OpenPowerliftingSearchView: View {
                                 }
                             }
                     )
-                
-                Spacer()
             }
             .padding(.horizontal)
             
@@ -126,69 +146,24 @@ struct OpenPowerliftingSearchView: View {
     private var lifterPersonalBestsView: some View {
         Group {
             if let lifter = viewModel.lifters.first {
-                VStack(spacing: 10) {
-                    Text("Personal Bests")
-                        .font(.system(size: 24))
-                        .bold()
-                        .foregroundColor(.white)
-                        .padding()
-                    
-                    HStack {
-                        Spacer()
-                        VStack {
-                            Text("Squat")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(String(format: "%.1f", lifter.personalBests.squat).replacingOccurrences(of: ".0", with: ""))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Bench")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(String(format: "%.1f", lifter.personalBests.bench).replacingOccurrences(of: ".0", with: ""))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Deadlift")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(String(format: "%.1f", lifter.personalBests.deadlift).replacingOccurrences(of: ".0", with: ""))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Total")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(String(format: "%.1f", lifter.personalBests.total).replacingOccurrences(of: ".0", with: ""))
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Dots")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(String(format: "%.2f", lifter.personalBests.dots))
-                                .foregroundColor(.white)
-                        }
-                        Spacer()
-                    }
-                    .padding()
-                    .background(Color.black)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                    )
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-                }
+                let (squat, bench, deadlift, total, dots) = (
+                    pounds ? lifter.personalBests.squat * 2.2046 : lifter.personalBests.squat,
+                    pounds ? lifter.personalBests.bench * 2.2046 : lifter.personalBests.bench,
+                    pounds ? lifter.personalBests.deadlift * 2.2046 : lifter.personalBests.deadlift,
+                    pounds ? lifter.personalBests.total * 2.2046 : lifter.personalBests.total,
+                    lifter.personalBests.dots
+                )
+                
+                Card(
+                    title: "Personal Bests",
+                    data: [
+                        (label: "Squat", value: formatValue(squat, decimals: 1)),
+                        (label: "Bench", value: formatValue(bench, decimals: 1)),
+                        (label: "Deadlift", value: formatValue(deadlift, decimals: 1)),
+                        (label: "Total", value: formatValue(total, decimals: 1)),
+                        (label: "Dots", value: formatValue(dots, decimals: 2))
+                    ]
+                )
             }
         }
     }
@@ -196,70 +171,24 @@ struct OpenPowerliftingSearchView: View {
     private var lifterProgressView: some View {
         Group {
             if let lifter = viewModel.lifters.first, lifter.competitions.count > 1 {
-                VStack(spacing: 10) {
-                    Text("Progress")
-                        .font(.system(size: 24))
-                        .bold()
-                        .foregroundColor(.white)
-                        .padding()
-                    
-                    HStack {
-                        Spacer()
-                        VStack {
-                            Text("Squat")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            
-                            Text("\(lifter.progress.squat)%")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Bench")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("\(lifter.progress.bench)%")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Deadlift")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("\(lifter.progress.deadlift)%")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Total")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("\(lifter.progress.total)%")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
-                        VStack {
-                            Text("Dots")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("\(lifter.progress.dots)%")
-                                .foregroundColor(.white)
-                        }
-                        Spacer()
-                    }
-                    .padding()
-                    .background(Color.black)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                    )
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-                }
+                let (squat, bench, deadlift, total, dots) = (
+                    lifter.progress.squat,
+                    lifter.progress.bench,
+                    lifter.progress.deadlift,
+                    lifter.progress.total,
+                    lifter.progress.dots
+                )
+                
+                Card(
+                    title: "Progress",
+                    data: [
+                        (label: "Squat", value: "\(squat)%"),
+                        (label: "Bench", value: "\(bench)%"),
+                        (label: "Deadlift", value: "\(deadlift)%"),
+                        (label: "Total", value: "\(total)%"),
+                        (label: "Dots", value: "\(dots)%")
+                    ]
+                )
             }
         }
     }
@@ -291,8 +220,15 @@ struct OpenPowerliftingSearchView: View {
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
+                    
+                    let total = pounds ? competition.total * 2.2046 : competition.total
+                    let bodyweight = pounds ? competition.bodyweight * 2.2046 : competition.bodyweight
+                    let formattedTotal = String(format: "%.1f", total).replacingOccurrences(of: ".0", with: "")
+                    let formattedBodyweight = String(format: "%.2f", bodyweight)
+                    let placing = ordinal(of: competition.placing)
+                    let placeEmoji = getPlaceEmoji(for: competition.placing)
 
-                    Text("\(String(format: "%.1f", competition.total).replacingOccurrences(of: ".0", with: "")) @ \(String(format: "%.2f", competition.bodyweight)), \(ordinal(of: competition.placing)) Place \(getPlaceEmoji(for: competition.placing))")
+                    Text("\(formattedTotal) @ \(formattedBodyweight), \(placing) Place \(placeEmoji)")
                         .font(.subheadline)
                         .foregroundColor(.gray)
 
@@ -354,15 +290,21 @@ struct OpenPowerliftingSearchView: View {
         }
     }
     
+    private func formatValue(_ value: Double, decimals: Int) -> String {
+        let formatted = String(format: "%.\(decimals)f", value)
+        return decimals == 1 ? formatted.replacingOccurrences(of: ".0", with: "") : formatted
+    }
+    
     private func formattedAttempts(for attempts: [Double?]) -> String {
         return attempts.compactMap { attempt -> String? in
             guard let attemptValue = attempt else { return nil }
             
-            var formattedAttempt = String(format: "%.1f", attemptValue).replacingOccurrences(of: ".0", with: "")
+            var formattedAttempt = String(format: "%.1f", pounds ? attemptValue * 2.2046 : attemptValue).replacingOccurrences(of: ".0", with: "")
             
             if formattedAttempt.hasPrefix("-") {
                 formattedAttempt = formattedAttempt.replacingOccurrences(of: "-", with: "") + "x"
             }
+            
             return formattedAttempt
         }.joined(separator: "/")
     }
@@ -379,6 +321,41 @@ struct OpenPowerliftingSearchView: View {
     }
 }
 
+struct Card: View {
+    var title: String
+    var data: [(label: String, value: String)]
+    
+    var body: some View {
+        VStack(spacing: 10) {
+            Text(title)
+                .font(.system(size: 24))
+                .bold()
+                .foregroundColor(.white)
+                .padding()
+            
+            HStack(spacing: 0) {
+                ForEach(data, id: \.label) { item in
+                    VStack {
+                        Text(item.label)
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        Text(item.value)
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding()
+            .background(.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+            )
+            .cornerRadius(10)
+            .padding(.horizontal)
+        }
+    }
+}
 
 class LifterViewModel: ObservableObject {
     @Published var lifters: [Lifter] = []
@@ -558,7 +535,7 @@ class LifterViewModel: ObservableObject {
             let total = Double(columns[totalIndex]) ?? 0.0
             let dots = Double(columns[dotsIndex]) ?? 0.0
             
-            if [squatAttempts, benchAttempts, deadliftAttempts].allSatisfy({ !$0.compactMap({ $0 }).isEmpty }) {
+            if [squatAttempts, benchAttempts, deadliftAttempts].allSatisfy({ !$0.compactMap({ $0 }).isEmpty }) && total != 0 {
                 firstMeetSquat = squatAttempts.compactMap{ $0 }.max() ?? 0
                 firstMeetBench = benchAttempts.compactMap{ $0 }.max() ?? 0
                 firstMeetDeadlift = deadliftAttempts.compactMap{ $0 }.max() ?? 0
@@ -625,7 +602,7 @@ class LifterViewModel: ObservableObject {
             }
             
             self.suggestions = documents
-                .sorted { getValue(from: $0, key: "dots") > getValue(from: $1, key: "dots") }
+                .sorted { getValue(from: $0, key: "personalBests.dots") > getValue(from: $1, key: "personalBests.dots") }
                 .map { $0.documentID }
         }
     }
@@ -641,10 +618,14 @@ class LifterViewModel: ObservableObject {
     }
     
     private func getValue(from document: QueryDocumentSnapshot, key: String) -> Double {
-        let data = document.data()["lifter"] as? [String: Any]
-        let personalBests = data?["personalBests"] as? [String: Any]
+        let parts = key.split(separator: ".").map { String($0) }
         
-        return personalBests?[key] as? Double ?? 0
+        guard let data = (document.data()["lifter"] as? [String: Any])?[parts.first ?? key] as? [String: Any],
+              let value = data[parts.last ?? key] as? Double else {
+            return 0
+        }
+        
+        return value
     }
 }
 

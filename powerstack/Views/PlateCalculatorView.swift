@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct PlateCalculatorView: View {
+    @EnvironmentObject var settings: SettingsManager
+    
     @State private var userInput: String = ""
     @State private var weightInKgs: Double = 20
     @State private var poundPlates: Bool = false
@@ -53,11 +55,11 @@ struct PlateCalculatorView: View {
                 Spacer()
             }
             
-            if !distribution.isEmpty && !SettingsManager.shouldHideSaveButton() {
+            if !distribution.isEmpty && !settings.hideSaveButton {
                 VStack {
                     Spacer()
                     
-                    if SettingsManager.shouldDisableImagePreview() {
+                    if settings.disableImagePreview {
                         SaveImageButtonNoPreview()
                     } else {
                         SaveImageButton()
@@ -67,10 +69,16 @@ struct PlateCalculatorView: View {
         }
         .dismissKeyboardOnTap()
         .ignoresSafeArea(.keyboard)
+        .onChange(of: settings.weightUnit) {
+            updateDistribution()
+        }
+        .onChange(of: settings.disableImagePreview) {
+            renderedImage = nil
+        }
     }
     
     private func CustomTextField() -> some View {
-        TextField("Enter weight in \(SettingsManager.getWeightUnit())", text: $userInput)
+        TextField("Enter weight in \(settings.weightUnit)", text: $userInput)
             .keyboardType(.decimalPad)
             .modifier(CustomTextFieldModifier())
             .onChange(of: userInput) {
@@ -86,6 +94,8 @@ struct PlateCalculatorView: View {
                 .textCase(.uppercase)
         }
         .onChange(of: poundPlates) {
+            hasCollars = false
+            
             updateDistribution()
         }
     }
@@ -97,6 +107,7 @@ struct PlateCalculatorView: View {
                 .foregroundColor(.white.opacity(0.5))
                 .textCase(.uppercase)
         }
+        .disabled(poundPlates)
         .onChange(of: hasCollars) {
             updateDistribution()
         }
@@ -188,12 +199,14 @@ struct PlateCalculatorView: View {
             hostingController.view.bounds = CGRect(origin: .zero, size: size)
             hostingController.view.drawHierarchy(in: hostingController.view.bounds, afterScreenUpdates: true)
         }
-
+        
         renderedImage = image
     }
     
     private func saveImage() {
-        UIImageWriteToSavedPhotosAlbum(renderedImage!, nil, nil, nil)
+        if let renderedImage = renderedImage {
+            UIImageWriteToSavedPhotosAlbum(renderedImage, nil, nil, nil)
+        }
     }
     
     private func updateDistribution() {
@@ -248,7 +261,7 @@ struct PlateCalculatorView: View {
     private func handleConversion(_ num: Double?) -> Double? {
         guard let num = num else { return nil }
     
-        let weightUnit = SettingsManager.getWeightUnit()
+        let weightUnit = settings.weightUnit
 
         if (weightUnit == SettingsManager.unitPounds && !poundPlates) || (weightUnit == SettingsManager.unitKilograms && poundPlates) {
             return weightUnit == SettingsManager.unitPounds ? num / 2.2046 : num * 2.2046
@@ -269,11 +282,13 @@ struct ImagePreviewSheet: View {
             Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
             
             VStack {
-                Image(uiImage: image!)
-                    .resizable()
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .padding()
+                if let image = image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .padding()
+                }
                 
                 HStack(spacing: 15) {
                     Button(action: saveImage) {

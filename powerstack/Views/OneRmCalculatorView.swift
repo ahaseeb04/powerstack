@@ -12,6 +12,8 @@ struct OneRmCalculatorView: View {
     @State private var reps: String = ""
     @State private var oneRepMax: String = ""
     
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -51,6 +53,9 @@ struct OneRmCalculatorView: View {
             ToolbarItem(placement: .principal) {
                 Text("One-Rep Max Calculator")
             }
+        }
+        .onLeftSwipe {
+            dismiss()
         }
     }
     
