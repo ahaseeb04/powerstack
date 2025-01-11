@@ -24,6 +24,8 @@ struct OpenPowerliftingSearchView: View {
     
     @State private var invoked: Bool = false
     
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -69,6 +71,9 @@ struct OpenPowerliftingSearchView: View {
         }
         .onAppear {
             viewModel.fetchSuggestions()
+        }
+        .onLeftSwipe {
+            dismiss()
         }
     }
     

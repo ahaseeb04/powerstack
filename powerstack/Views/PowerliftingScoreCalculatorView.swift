@@ -18,6 +18,8 @@ struct PowerliftingScoreCalculatorView: View {
     
     @State private var scores: [String: String] = [:]
     
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -81,6 +83,9 @@ struct PowerliftingScoreCalculatorView: View {
             ToolbarItem(placement: .principal) {
                 Text("Powerlifting Score Calculator")
             }
+        }
+        .onLeftSwipe {
+            dismiss()
         }
     }
     
