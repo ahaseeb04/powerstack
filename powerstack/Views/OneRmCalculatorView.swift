@@ -12,6 +12,8 @@ struct OneRmCalculatorView: View {
     @State private var reps: String = ""
     @State private var oneRepMax: String = ""
     
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -52,15 +54,15 @@ struct OneRmCalculatorView: View {
                 Text("One-Rep Max Calculator")
             }
         }
+        .onLeftSwipe {
+            dismiss()
+        }
     }
     
     private func CustomTextField(placeholder: String, text: Binding<String>) -> some View {
         TextField(placeholder, text: text)
             .keyboardType(.decimalPad)
-            .padding()
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(10)
-            .disableAutocorrection(true)
+            .modifier(CustomTextFieldModifier())
             .onChange(of: text.wrappedValue) {
                 calculateOneRepMax()
             }

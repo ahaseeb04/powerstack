@@ -24,6 +24,7 @@ struct ToolsView: View {
                 }
             }
             .navigationTitle("Tools")
+            .navigationBarBackButtonHidden(true)
         }
         .environment(\.colorScheme, .dark)
     }

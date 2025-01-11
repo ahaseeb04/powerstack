@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct PowerliftingScoreCalculatorView: View {
+    @EnvironmentObject var settings: SettingsManager
+    
     @State private var total: String = ""
     @State private var bodyweight: String = ""
     @State private var gender: Gender = Gender.male
@@ -16,25 +18,27 @@ struct PowerliftingScoreCalculatorView: View {
     
     @State private var scores: [String: String] = [:]
     
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             
             VStack {
                 HStack(spacing: 10) {
-                    CustomTextField(placeholder: "Total (\(SettingsManager.getScoreCalculatorWeightUnit()))", text: $total)
+                    CustomTextField(placeholder: "Total (\(settings.scoreCalculatorWeightUnit))", text: $total)
                     
                     Image(systemName: "at")
                         .foregroundColor(Color.white.opacity(0.5))
                     
-                    CustomTextField(placeholder: "Bodyweight (\(SettingsManager.getScoreCalculatorWeightUnit()))", text: $bodyweight)
+                    CustomTextField(placeholder: "Bodyweight (\(settings.scoreCalculatorWeightUnit))", text: $bodyweight)
                 }
                 .padding(.bottom, 10)
                 
                 Group {
                     GenderPicker()
                     
-                    if !SettingsManager.shouldHideEventAndCategoryControls() {
+                    if !settings.hideEventAndCategoryControls {
                         HStack {
                             EventPicker()
                             CategoryPicker()
@@ -42,7 +46,29 @@ struct PowerliftingScoreCalculatorView: View {
                     }
                 }
                 
-                ResultView(scores: scores)
+                if let dots = scores["dots"],
+                   let oldWilks = scores["oldWilks"],
+                   let newWilks = scores["newWilks"],
+                   let IPF = scores["IPF"],
+                   let IPFGL = scores["IPFGL"],
+                   !dots.isEmpty,
+                   !oldWilks.isEmpty, !newWilks.isEmpty,
+                   !IPF.isEmpty, !IPFGL.isEmpty {
+                    VStack {
+                        ScoreBox(title: "Dots", score: dots)
+                        
+                        HStack {
+                            ScoreBox(title: "Old Wilks", score: oldWilks)
+                            ScoreBox(title: "Wilks2", score: newWilks)
+                        }
+                        
+                        HStack {
+                            ScoreBox(title: "IPF", score: IPF)
+                            ScoreBox(title: "IPF GL", score: IPFGL)
+                        }
+                    }
+                    .padding(.top, 20)
+                }
                 
                 Spacer()
             }
@@ -50,20 +76,23 @@ struct PowerliftingScoreCalculatorView: View {
         }
         .dismissKeyboardOnTap()
         .ignoresSafeArea(.keyboard)
+        .onChange(of: settings.scoreCalculatorWeightUnit) {
+            update()
+        }
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text("Powerlifting Score Calculator")
             }
+        }
+        .onLeftSwipe {
+            dismiss()
         }
     }
     
     private func CustomTextField(placeholder: String, text: Binding<String>) -> some View {
         TextField(placeholder, text: text)
             .keyboardType(.decimalPad)
-            .padding()
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(10)
-            .disableAutocorrection(true)
+            .modifier(CustomTextFieldModifier())
             .onChange(of: text.wrappedValue) {
                 update()
             }
@@ -100,6 +129,28 @@ struct PowerliftingScoreCalculatorView: View {
         .onChange(of: category) {
             update()
         }
+    }
+    
+    private func ScoreBox(title: String, score: String) -> some View {
+        Rectangle()
+            .frame(maxWidth: .infinity, maxHeight: 100)
+            .foregroundColor(Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+            )
+            .overlay(
+                VStack {
+                    Text(title)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(Color.white.opacity(0.5))
+                        .textCase(.uppercase)
+                    
+                    Text(score)
+                        .foregroundColor(.white)
+                        .font(.headline)
+                }
+            )
     }
     
     private func update() {
@@ -186,61 +237,9 @@ struct PowerliftingScoreCalculatorView: View {
     private func handleConversion(_ num: Double?) -> Double? {
         guard let num = num else { return nil }
     
-        let conversionFactor = SettingsManager.getScoreCalculatorWeightUnit() == SettingsManager.unitPounds ? 2.2046 : 1.0
+        let conversionFactor = settings.scoreCalculatorWeightUnit == SettingsManager.unitPounds ? 2.2046 : 1.0
         
         return num / conversionFactor
-    }
-}
-
-private struct ResultView: View {
-    var scores: [String: String]
-    
-    var body: some View {
-        if let dots = scores["dots"],
-           let oldWilks = scores["oldWilks"],
-           let newWilks = scores["newWilks"],
-           let IPF = scores["IPF"],
-           let IPFGL = scores["IPFGL"],
-           !dots.isEmpty,
-           !oldWilks.isEmpty, !newWilks.isEmpty,
-           !IPF.isEmpty, !IPFGL.isEmpty {
-            VStack {
-                ScoreBox(title: "Dots", score: dots)
-                
-                HStack {
-                    ScoreBox(title: "Old Wilks", score: oldWilks)
-                    ScoreBox(title: "Wilks2", score: newWilks)
-                }
-                
-                HStack {
-                    ScoreBox(title: "IPF", score: IPF)
-                    ScoreBox(title: "IPF GL", score: IPFGL)
-                }
-            }
-            .padding(.top, 20)
-        }
-    }
-    
-    private func ScoreBox(title: String, score: String) -> some View {
-        Rectangle()
-            .frame(maxWidth: .infinity, maxHeight: 100)
-            .foregroundColor(Color.clear)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-            )
-            .overlay(
-                VStack {
-                    Text(title)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.5))
-                        .textCase(.uppercase)
-                    
-                    Text(score)
-                        .foregroundColor(.white)
-                        .font(.headline)
-                }
-            )
     }
 }
 

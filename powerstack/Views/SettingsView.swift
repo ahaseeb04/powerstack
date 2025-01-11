@@ -8,13 +8,11 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var hideSaveButton: Bool = SettingsManager.shouldHideSaveButton()
-    @State private var disableImagePreview: Bool = SettingsManager.shouldDisableImagePreview()
-    @State private var disableSearchPrediction: Bool = SettingsManager.shouldDisableSearchPrediction()
-    @State private var selectedUnit: String = SettingsManager.getWeightUnit()
-    @State private var scoreCalculatorSelectedUnit: String = SettingsManager.getScoreCalculatorWeightUnit()
-    @State private var hideEventAndCategoryControls: Bool = SettingsManager.shouldHideEventAndCategoryControls()
-
+    @EnvironmentObject var settings: SettingsManager
+    
+    @State var selectedUnit: String = ""
+    @State var scoreCalculatorWeightUnit: String = ""
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -32,37 +30,40 @@ struct SettingsView: View {
                             }
                             .pickerStyle(SegmentedPickerStyle())
                             .frame(maxWidth: 100)
-                            .onChange(of: selectedUnit) {
-                                SettingsManager.setWeightUnit(selectedUnit)
+                            .onAppear {
+                                selectedUnit = settings.weightUnit
+                            }
+                            .onChange(of: selectedUnit) { oldValue, newValue in
+                                settings.weightUnit = newValue
                             }
                         }
                         
-                        Toggle(isOn: $hideSaveButton) {
+                        Toggle(isOn: $settings.hideSaveButton) {
                             Text("Hide Save to Camera Roll Button")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: hideSaveButton) {
-                            SettingsManager.setHideSaveButton(hideSaveButton)
+                        .onChange(of: settings.hideSaveButton) { oldValue, newValue in
+                            settings.hideSaveButton = newValue
                         }
                         
-                        Toggle(isOn: $disableImagePreview) {
+                        Toggle(isOn: $settings.disableImagePreview) {
                             Text("Disable 2-Step Confirmation")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: disableImagePreview) {
-                            SettingsManager.setDisableImagePreview(disableImagePreview)
+                        .onChange(of: settings.disableImagePreview) { oldValue, newValue in
+                            settings.disableImagePreview = newValue
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
                     .foregroundColor(.white)
                     
                     Section(header: Text("OpenPowerlifting Search")) {
-                        Toggle(isOn: $disableSearchPrediction) {
+                        Toggle(isOn: $settings.disableSearchPrediction) {
                             Text("Disable Predictive Text")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: disableSearchPrediction) {
-                            SettingsManager.setDisableSearchPrediction(disableSearchPrediction)
+                        .onChange(of: settings.disableSearchPrediction) { oldValue, newValue in
+                            settings.disableSearchPrediction = newValue
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
@@ -73,23 +74,26 @@ struct SettingsView: View {
                             Text("Weight Input")
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
-                            Picker("Weight Unit", selection: $scoreCalculatorSelectedUnit) {
+                            Picker("Weight Unit", selection: $scoreCalculatorWeightUnit) {
                                 Text(SettingsManager.unitPounds).tag(SettingsManager.unitPounds)
                                 Text(SettingsManager.unitKilograms).tag(SettingsManager.unitKilograms)
                             }
                             .pickerStyle(SegmentedPickerStyle())
                             .frame(maxWidth: 100)
-                            .onChange(of: scoreCalculatorSelectedUnit) {
-                                SettingsManager.setScoreCalculatorWeightUnit(scoreCalculatorSelectedUnit)
+                            .onAppear {
+                                scoreCalculatorWeightUnit = settings.scoreCalculatorWeightUnit
+                            }
+                            .onChange(of: scoreCalculatorWeightUnit) { oldValue, newValue in
+                                settings.scoreCalculatorWeightUnit = newValue
                             }
                         }
                         
-                        Toggle(isOn: $hideEventAndCategoryControls) {
-                            Text("Hide Equipped Section")
+                        Toggle(isOn: $settings.hideEventAndCategoryControls) {
+                            Text("Hide Equipped/Bench-Only Switch")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: hideEventAndCategoryControls) {
-                            SettingsManager.setHideEventAndCategoryControls(hideEventAndCategoryControls)
+                        .onChange(of: settings.hideEventAndCategoryControls) { oldValue, newValue in
+                            settings.hideEventAndCategoryControls = newValue
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
@@ -99,8 +103,37 @@ struct SettingsView: View {
                 .background(Color.black)
                 .foregroundColor(.white)
             }
+            
+            VStack {
+                Spacer()
+                
+                HStack(spacing: 0) {
+                    Text("Created by ")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                    
+                    Text("Abdul Haseeb")
+                        .font(.footnote)
+                        .foregroundColor(.blue)
+                        .onTapGesture {
+                            openInstagramProfile(username: "abdul.h83")
+                        }
+                }
+            }
+            .padding(.bottom, 50)
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    func openInstagramProfile(username: String) {
+        let appURL = URL(string: "instagram://user?username=\(username)")!
+        let webURL = URL(string: "https://www.instagram.com/\(username)")!
+        
+        if UIApplication.shared.canOpenURL(appURL) {
+            UIApplication.shared.open(appURL, options: [:], completionHandler: nil)
+        } else {
+            UIApplication.shared.open(webURL, options: [:], completionHandler: nil)
+        }
     }
 }

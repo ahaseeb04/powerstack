@@ -8,62 +8,45 @@
 import SwiftUI
 
 struct PlateCalculatorView: View {
+    @EnvironmentObject var settings: SettingsManager
+    
     @State private var userInput: String = ""
     @State private var weightInKgs: Double = 20
-    @State private var usePounds: Bool = false
+    @State private var poundPlates: Bool = false
     @State private var hasCollars: Bool = false
     @State private var distribution: [String: Int] = [:]
     
-    @State private var renderedImage: UIImage?
     @State private var saveSuccess: Bool = false
+    @State private var renderedImage: UIImage?
     
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             
             VStack {
-                TextField("Enter weight in \(SettingsManager.getWeightUnit())", text: $userInput)
-                    .keyboardType(.decimalPad)
-                    .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-                    .onChange(of: userInput) {
-                        updateDistribution()
-                    }
+                CustomTextField()
                 
-                Toggle(isOn: $usePounds) {
-                    Text("Lbs Plates")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.5))
-                        .textCase(.uppercase)
+                VStack(spacing: 10) {
+                    PoundPlatesToggle()
+                    
+                    Divider()
+                    
+                    CollarsToggle()
                 }
-                .padding(.top, 10)
-                .onChange(of: usePounds) {
-                    updateDistribution()
-                }
-                
-                if !usePounds {
-                    Toggle(isOn: $hasCollars) {
-                        Text("2.5kg Collars")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.5))
-                            .textCase(.uppercase)
-                    }
-                    .onChange(of: hasCollars) {
-                        updateDistribution()
-                    }
-                }
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+                .background(Color.gray.opacity(0.15))
+                .cornerRadius(10)
                 
                 Spacer()
             }
-            .padding(.horizontal, 30)
+            .padding(.horizontal)
             .padding(.vertical, 30)
             
             VStack {
                 Spacer()
                 
-                if usePounds {
+                if poundPlates {
                     BarbellViewPounds(distribution: distribution, showDescription: true)
                 } else {
                     BarbellView(distribution: distribution, hasCollars: hasCollars, showDescription: true)
@@ -72,81 +55,131 @@ struct PlateCalculatorView: View {
                 Spacer()
             }
             
-            if !distribution.isEmpty && !SettingsManager.shouldHideSaveButton() {
+            if !distribution.isEmpty && !settings.hideSaveButton {
                 VStack {
                     Spacer()
                     
-                    if SettingsManager.shouldDisableImagePreview() {
-                        Button(action: {
-                            generatePreview()
-                            saveImage()
-                            saveSuccess = true
-                        }) {
-                            HStack {
-                                if saveSuccess {
-                                    Image(systemName: "checkmark.circle")
-                                        .font(.title2)
-                                        .foregroundColor(.green)
-                                    Text("Image Saved")
-                                        .font(.footnote)
-                                        .bold()
-                                        .foregroundColor(.green)
-                                } else {
-                                    Image(systemName: "arrow.down.circle")
-                                        .font(.title2)
-                                    Text("Save to Camera Roll")
-                                        .font(.footnote)
-                                        .bold()
-                                }
-                            }
-                            .frame(maxWidth: saveSuccess ? 125 : 170, alignment: .center)
-                        }
-                        .disabled(saveSuccess)
-                        .buttonStyle(.bordered)
-                        .cornerRadius(10)
-                        .padding(.bottom, 50)
+                    if settings.disableImagePreview {
+                        SaveImageButtonNoPreview()
                     } else {
-                        Button(action: generatePreview) {
-                            HStack {
-                                if saveSuccess {
-                                    Image(systemName: "checkmark.circle")
-                                        .font(.title2)
-                                        .foregroundColor(.green)
-                                    Text("Image Saved")
-                                        .font(.footnote)
-                                        .bold()
-                                        .foregroundColor(.green)
-                                } else {
-                                    Image(systemName: "arrow.down.circle")
-                                        .font(.title2)
-                                    Text("Save to Camera Roll")
-                                        .font(.footnote)
-                                        .bold()
-                                }
-                            }
-                            .frame(maxWidth: saveSuccess ? 125 : 170, alignment: .center)
-                        }
-                        .disabled(saveSuccess)
-                        .buttonStyle(.bordered)
-                        .cornerRadius(10)
-                        .padding(.bottom, 50)
-                        .sheet(isPresented: Binding(
-                            get: { renderedImage != nil },
-                            set: { if !$0 { renderedImage = nil } }
-                        )) {
-                            ImagePreviewSheet(image: renderedImage, onSave: { saveSuccess = true })
-                                .presentationDetents([.fraction(0.65)])
-                        }
+                        SaveImageButton()
                     }
                 }
             }
         }
         .dismissKeyboardOnTap()
         .ignoresSafeArea(.keyboard)
+        .onChange(of: settings.weightUnit) {
+            updateDistribution()
+        }
+        .onChange(of: settings.disableImagePreview) {
+            renderedImage = nil
+        }
     }
     
-    func generatePreview() {
-        let view: AnyView = usePounds
+    private func CustomTextField() -> some View {
+        TextField("Enter weight in \(settings.weightUnit)", text: $userInput)
+            .keyboardType(.decimalPad)
+            .modifier(CustomTextFieldModifier())
+            .onChange(of: userInput) {
+                updateDistribution()
+            }
+    }
+    
+    private func PoundPlatesToggle() -> some View {
+        Toggle(isOn: $poundPlates) {
+            Text("\(SettingsManager.unitPounds) Plates")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.white.opacity(0.5))
+                .textCase(.uppercase)
+        }
+        .onChange(of: poundPlates) {
+            hasCollars = false
+            
+            updateDistribution()
+        }
+    }
+    
+    private func CollarsToggle() -> some View {
+        Toggle(isOn: $hasCollars) {
+            Text("Collars")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.white.opacity(0.5))
+                .textCase(.uppercase)
+        }
+        .disabled(poundPlates)
+        .onChange(of: hasCollars) {
+            updateDistribution()
+        }
+    }
+    
+    private func SaveImageButtonNoPreview() -> some View {
+        Button(action: {
+            generatePreview()
+            saveImage()
+            saveSuccess = true
+        }) {
+            HStack {
+                if saveSuccess {
+                    Image(systemName: "checkmark.circle")
+                        .font(.title2)
+                        .foregroundColor(.green)
+                    Text("Image Saved")
+                        .font(.footnote)
+                        .bold()
+                        .foregroundColor(.green)
+                } else {
+                    Image(systemName: "arrow.down.circle")
+                        .font(.title2)
+                    Text("Save to Camera Roll")
+                        .font(.footnote)
+                        .bold()
+                }
+            }
+            .frame(maxWidth: saveSuccess ? 125 : 170, alignment: .center)
+        }
+        .disabled(saveSuccess)
+        .buttonStyle(.bordered)
+        .cornerRadius(10)
+        .padding(.bottom, 50)
+    }
+    
+    private func SaveImageButton() -> some View {
+        Button(action: generatePreview) {
+            HStack {
+                if saveSuccess {
+                    Image(systemName: "checkmark.circle")
+                        .font(.title2)
+                        .foregroundColor(.green)
+                    Text("Image Saved")
+                        .font(.footnote)
+                        .bold()
+                        .foregroundColor(.green)
+                } else {
+                    Image(systemName: "arrow.down.circle")
+                        .font(.title2)
+                    Text("Save to Camera Roll")
+                        .font(.footnote)
+                        .bold()
+                }
+            }
+            .frame(maxWidth: saveSuccess ? 125 : 170, alignment: .center)
+        }
+        .disabled(saveSuccess)
+        .buttonStyle(.bordered)
+        .cornerRadius(10)
+        .padding(.bottom, 50)
+        .sheet(isPresented: Binding(
+            get: { renderedImage != nil },
+            set: { if !$0 { renderedImage = nil } }
+        )) {
+            ImagePreviewSheet(image: renderedImage, onSave: { saveSuccess = true })
+                .presentationDetents([.fraction(0.65)])
+        }
+    }
+    
+    private func generatePreview() {
+        let view: AnyView = poundPlates
             ? AnyView(BarbellViewPounds(distribution: distribution, showDescription: false))
             : AnyView(BarbellView(distribution: distribution, hasCollars: hasCollars, showDescription: false))
         
@@ -166,25 +199,21 @@ struct PlateCalculatorView: View {
             hostingController.view.bounds = CGRect(origin: .zero, size: size)
             hostingController.view.drawHierarchy(in: hostingController.view.bounds, afterScreenUpdates: true)
         }
-
+        
         renderedImage = image
     }
     
     private func saveImage() {
-        UIImageWriteToSavedPhotosAlbum(renderedImage!, nil, nil, nil)
+        if let renderedImage = renderedImage {
+            UIImageWriteToSavedPhotosAlbum(renderedImage, nil, nil, nil)
+        }
     }
     
-    func updateDistribution() {
-        if var weight = Double(userInput), weight > 0 {
+    private func updateDistribution() {
+        if let weight = handleConversion(Double(userInput)), weight > 0 {
             saveSuccess = false
             
-            let weightUnit = SettingsManager.getWeightUnit()
-
-            if (weightUnit == SettingsManager.unitPounds && !usePounds) || (weightUnit == SettingsManager.unitKilograms && usePounds) {
-                weight = weightUnit == SettingsManager.unitPounds ? weight / 2.2046 : weight * 2.2046
-            }
-            
-            if usePounds {
+            if poundPlates {
                 distribution = barbellDistributionPounds(weight: min(round(weight / 2.5) * 2.5, 1500), bar: 45)
             } else {
                 weightInKgs = min(round(weight / 2.5) * 2.5, 1000)
@@ -193,7 +222,7 @@ struct PlateCalculatorView: View {
         }
     }
     
-    func barbellDistribution(weight: Double, bar: Double) -> [String: Int] {
+    private func barbellDistribution(weight: Double, bar: Double) -> [String: Int] {
         let plates: [(Double, String)] = [
             (25, "red"), (20, "blue"), (15, "yellow"), (10, "green"),
             (5, "white"), (2.5, "black"), (1.25, "silver")
@@ -211,7 +240,7 @@ struct PlateCalculatorView: View {
         }
     }
 
-    func barbellDistributionPounds(weight: Double, bar: Double) -> [String: Int] {
+    private func barbellDistributionPounds(weight: Double, bar: Double) -> [String: Int] {
         let plates: [(Double, String)] = [
             (45, "gray"), (35, "gray"), (25, "gray"), (10, "gray"),
             (5, "gray"), (2.5, "gray")
@@ -228,6 +257,18 @@ struct PlateCalculatorView: View {
             }
         }
     }
+    
+    private func handleConversion(_ num: Double?) -> Double? {
+        guard let num = num else { return nil }
+    
+        let weightUnit = settings.weightUnit
+
+        if (weightUnit == SettingsManager.unitPounds && !poundPlates) || (weightUnit == SettingsManager.unitKilograms && poundPlates) {
+            return weightUnit == SettingsManager.unitPounds ? num / 2.2046 : num * 2.2046
+        }
+        
+        return num
+    }
 }
 
 struct ImagePreviewSheet: View {
@@ -241,11 +282,13 @@ struct ImagePreviewSheet: View {
             Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
             
             VStack {
-                Image(uiImage: image!)
-                    .resizable()
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .padding()
+                if let image = image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .padding()
+                }
                 
                 HStack(spacing: 15) {
                     Button(action: saveImage) {
@@ -336,7 +379,7 @@ struct BarbellView: View {
             }
             .offset(x: -70)
             
-            let weight = "\(formattedWeight(totalWeightInKgs())) kgs / \(formattedWeight(totalWeightInKgs() * 2.2046)) lbs"
+            let weight = "\(formattedWeight(totalWeightInKgs())) \(SettingsManager.unitKilograms) / \(formattedWeight(totalWeightInKgs() * 2.2046)) \(SettingsManager.unitPounds)"
             
             VStack {
                 Spacer()
@@ -464,7 +507,7 @@ struct BarbellViewPounds: View {
             }
             .offset(x: -70)
             
-            let weight = "\(formattedWeight(totalWeightInLbs() / 2.2046)) kgs / \(formattedWeight(totalWeightInLbs())) lbs"
+            let weight = "\(formattedWeight(totalWeightInLbs() / 2.2046)) \(SettingsManager.unitKilograms) / \(formattedWeight(totalWeightInLbs())) \(SettingsManager.unitPounds)"
             
             VStack {
                 Spacer()

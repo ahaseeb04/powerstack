@@ -10,6 +10,7 @@ import FirebaseCore
 
 @main
 struct powerstackApp: App {
+    @StateObject var settings = SettingsManager()
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     init() {
@@ -19,6 +20,7 @@ struct powerstackApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(settings)
         }
     }
 }
