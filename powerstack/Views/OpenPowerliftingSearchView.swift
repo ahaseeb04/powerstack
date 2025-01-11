@@ -17,7 +17,7 @@ struct OpenPowerliftingSearchView: View {
     @StateObject private var viewModel = LifterViewModel()
     
     @State private var lifterName: String = ""
-    @State private var pounds: Bool = false
+    @AppStorage("openPowerliftingSearchPounds") private var pounds: Bool = false
     
     @State private var suggestion: String? = nil
     @State private var filteredSuggestions: [String] = []

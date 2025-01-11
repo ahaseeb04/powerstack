@@ -94,6 +94,8 @@ struct PlateCalculatorView: View {
                 .textCase(.uppercase)
         }
         .onChange(of: poundPlates) {
+            hasCollars = false
+            
             updateDistribution()
         }
     }
@@ -105,6 +107,7 @@ struct PlateCalculatorView: View {
                 .foregroundColor(.white.opacity(0.5))
                 .textCase(.uppercase)
         }
+        .disabled(poundPlates)
         .onChange(of: hasCollars) {
             updateDistribution()
         }
