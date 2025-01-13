@@ -22,6 +22,10 @@ struct ToolsView: View {
                 NavigationLink(destination: PowerliftingScoreCalculatorView()) {
                     Text("Powerlifting Score Calculator")
                 }
+                
+                NavigationLink(destination: AttemptCalculatorView()) {
+                    Text("Attempt Selection Calculator")
+                }
             }
             .navigationTitle("Tools")
             .navigationBarBackButtonHidden(true)
