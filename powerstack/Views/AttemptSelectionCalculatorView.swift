@@ -1,5 +1,5 @@
 //
-//  AttemptCalculatorView.swift
+//  AttemptSelectionCalculatorView.swift
 //  powerstack
 //
 //  Created by Abdul Haseeb on 2025-01-12.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AttemptCalculatorView: View {
+struct AttemptSelectionCalculatorView: View {
     @Environment(\.dismiss) var dismiss
     
     @State private var input: String = ""
@@ -32,7 +32,14 @@ struct AttemptCalculatorView: View {
             .dismissKeyboardOnTap()
             .ignoresSafeArea(.keyboard)
         }
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                }
+            }
+            
             ToolbarItem(placement: .principal) {
                 Text("Attempt Selection Calculator")
             }

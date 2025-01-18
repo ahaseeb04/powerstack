@@ -79,7 +79,14 @@ struct PowerliftingScoreCalculatorView: View {
         .onChange(of: settings.scoreCalculatorWeightUnit) {
             update()
         }
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                }
+            }
+            
             ToolbarItem(placement: .principal) {
                 Text("Powerlifting Score Calculator")
             }

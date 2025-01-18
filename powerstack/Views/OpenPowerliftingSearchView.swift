@@ -64,7 +64,14 @@ struct OpenPowerliftingSearchView: View {
             .dismissKeyboardOnTap()
             .ignoresSafeArea(.keyboard)
         }
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                }
+            }
+            
             ToolbarItem(placement: .principal) {
                 Text("OpenPowerlifting Search")
             }
