@@ -512,13 +512,15 @@ class LifterViewModel: ObservableObject {
                 firstMeetDots = dots
             }
             
-            personalBests = PersonalBests(
-                squat: max(personalBests.squat, squatAttempts.compactMap{ $0 }.max() ?? 0.0),
-                bench: max(personalBests.bench, benchAttempts.compactMap{ $0 }.max() ?? 0.0),
-                deadlift: max(personalBests.deadlift, deadliftAttempts.compactMap{ $0 }.max() ?? 0.0),
-                total: max(personalBests.total, total),
-                dots: max(personalBests.dots, dots)
-            )
+            if total != 0 {
+                personalBests = PersonalBests(
+                    squat: max(personalBests.squat, squatAttempts.compactMap{ $0 }.max() ?? 0.0),
+                    bench: max(personalBests.bench, benchAttempts.compactMap{ $0 }.max() ?? 0.0),
+                    deadlift: max(personalBests.deadlift, deadliftAttempts.compactMap{ $0 }.max() ?? 0.0),
+                    total: max(personalBests.total, total),
+                    dots: max(personalBests.dots, dots)
+                )
+            }
             
             let competition = Competition(
                 placing: Int(columns[placingIndex]) ?? 0,
@@ -567,7 +569,7 @@ class LifterViewModel: ObservableObject {
     func fetchSuggestions() {
         let cacheKey = "cachedSuggestions"
         let timestampKey = "lastSuggestionFetchTimestamp"
-        let cacheExpiration: TimeInterval = 30 * 60
+        let cacheExpiration: TimeInterval = 60 * 60
         
         if let cachedSuggestions = UserDefaults.standard.array(forKey: cacheKey) as? [String],
            let cacheTimestamp = UserDefaults.standard.object(forKey: timestampKey) as? Date {
