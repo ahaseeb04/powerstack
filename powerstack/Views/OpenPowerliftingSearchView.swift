@@ -38,20 +38,7 @@ struct OpenPowerliftingSearchView: View {
                     }
                     
                     if lifterName.count > 2 && viewModel.resourceFound {
-                        if viewModel.lifters.first != nil {
-                            Toggle(isOn: $pounds) {
-                                Text("\(SettingsManager.unitPounds)")
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(.white.opacity(0.5))
-                                    .textCase(.uppercase)
-                            }
-                            .padding(.horizontal)
-                            .padding(.vertical, 10)
-                            .background(Color.gray.opacity(0.15))
-                            .cornerRadius(10)
-                            .padding(.horizontal)
-                        }
-                        
+                        poundsToggle
                         lifterPersonalBestsView
                         lifterProgressView
                         lifterCompetitionsView
@@ -149,6 +136,24 @@ struct OpenPowerliftingSearchView: View {
         }
     }
     
+    private var poundsToggle: some View {
+        Group {
+            if viewModel.lifters.first != nil {
+                Toggle(isOn: $pounds) {
+                    Text("\(SettingsManager.unitPounds)")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.5))
+                        .textCase(.uppercase)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+                .background(Color.gray.opacity(0.15))
+                .cornerRadius(10)
+                .padding(.horizontal)
+            }
+        }
+    }
+    
     private var lifterPersonalBestsView: some View {
         Group {
             if let lifter = viewModel.lifters.first {
@@ -231,12 +236,22 @@ struct OpenPowerliftingSearchView: View {
                     let bodyweight = pounds ? competition.bodyweight * 2.2046 : competition.bodyweight
                     let formattedTotal = String(format: "%.1f", total).replacingOccurrences(of: ".0", with: "")
                     let formattedBodyweight = String(format: "%.2f", bodyweight)
+                    let dots = String(format: "%.2f", competition.dots)
                     let placing = ordinal(of: competition.placing)
                     let placeEmoji = getPlaceEmoji(for: competition.placing)
 
-                    Text("\(formattedTotal) @ \(formattedBodyweight), \(placing) Place \(placeEmoji)")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                    HStack {
+                        Text("\(formattedTotal) @ \(formattedBodyweight), \(placing) Place \(placeEmoji)")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        Spacer()
+                        
+                        Text("\(dots) DOTS")
+                            .multilineTextAlignment(.trailing)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
 
                     Divider()
                         .background(Color.gray)
