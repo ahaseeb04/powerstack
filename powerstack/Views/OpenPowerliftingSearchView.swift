@@ -20,7 +20,6 @@ struct OpenPowerliftingSearchView: View {
     @AppStorage("openPowerliftingSearchPounds") private var pounds: Bool = false
     
     @State private var suggestion: String? = nil
-    @State private var filteredSuggestions: [String] = []
     
     @State private var invoked: Bool = false
     
@@ -94,7 +93,7 @@ struct OpenPowerliftingSearchView: View {
                             viewModel.reset()
                         }
                         
-                        filterSuggestions()
+                        getSuggestion()
                         
                         debounceTimer?.invalidate()
                                         
@@ -316,15 +315,14 @@ struct OpenPowerliftingSearchView: View {
         }.joined(separator: "/")
     }
     
-    private func filterSuggestions() {
-        if lifterName.count < 3 {
+    private func getSuggestion() {
+        guard lifterName.count >= 3 else {
             suggestion = nil
             return
         }
         
-        filteredSuggestions = viewModel.suggestions.filter { $0.lowercased().hasPrefix(lifterName.lowercased()) }
-        
-        suggestion = filteredSuggestions.first ?? nil
+        suggestion = viewModel.suggestions
+            .first { $0.lowercased().hasPrefix(lifterName.lowercased()) }
     }
 }
 
@@ -567,14 +565,31 @@ class LifterViewModel: ObservableObject {
     }
     
     func fetchSuggestions() {
+        let cacheKey = "cachedSuggestions"
+        let timestampKey = "lastSuggestionFetchTimestamp"
+        let cacheExpiration: TimeInterval = 30 * 60
+        
+        if let cachedSuggestions = UserDefaults.standard.array(forKey: cacheKey) as? [String],
+           let cacheTimestamp = UserDefaults.standard.object(forKey: timestampKey) as? Date {
+            if Date().timeIntervalSince(cacheTimestamp) < cacheExpiration {
+                self.suggestions = cachedSuggestions
+                return
+            }
+        }
+        
         db.collection("lifters").getDocuments { [self] snapshot, error in
             guard let documents = snapshot?.documents else {
                 return
             }
             
-            self.suggestions = documents
+            let suggestions = documents
                 .sorted { getValue(from: $0, key: "personalBests.dots") > getValue(from: $1, key: "personalBests.dots") }
                 .map { $0.documentID }
+            
+            UserDefaults.standard.set(suggestions, forKey: cacheKey)
+            UserDefaults.standard.set(Date(), forKey: timestampKey)
+            
+            self.suggestions = suggestions
         }
     }
     
