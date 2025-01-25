@@ -38,7 +38,20 @@ struct OpenPowerliftingSearchView: View {
                     }
                     
                     if lifterName.count > 2 && viewModel.resourceFound {
-                        poundsToggle
+                        if viewModel.lifters.first != nil {
+                            Toggle(isOn: $pounds) {
+                                Text("\(SettingsManager.unitPounds)")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.5))
+                                    .textCase(.uppercase)
+                            }
+                            .padding(.horizontal)
+                            .padding(.vertical, 10)
+                            .background(Color.gray.opacity(0.15))
+                            .cornerRadius(10)
+                            .padding(.horizontal)
+                        }
+                        
                         lifterPersonalBestsView
                         lifterProgressView
                         lifterCompetitionsView
@@ -75,6 +88,7 @@ struct OpenPowerliftingSearchView: View {
             HStack(alignment: .center) {
                 TextField("Enter lifter name", text: $lifterName)
                     .modifier(CustomTextFieldModifier())
+                    .overlay(ClearableTextFieldOverlay(text: $lifterName))
                     .onChange(of: lifterName) {
                         if lifterName.isEmpty {
                             viewModel.reset()
@@ -121,6 +135,7 @@ struct OpenPowerliftingSearchView: View {
         ZStack {
             TextField("Enter lifter name", text: $lifterName)
                 .modifier(CustomTextFieldModifier())
+                .overlay(ClearableTextFieldOverlay(text: $lifterName))
                 .padding(.horizontal)
                 .onChange(of: lifterName) {
                     if lifterName.isEmpty {
@@ -133,24 +148,6 @@ struct OpenPowerliftingSearchView: View {
                         viewModel.fetchLifters(for: lifterName)
                     }
                 }
-        }
-    }
-    
-    private var poundsToggle: some View {
-        Group {
-            if viewModel.lifters.first != nil {
-                Toggle(isOn: $pounds) {
-                    Text("\(SettingsManager.unitPounds)")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.5))
-                        .textCase(.uppercase)
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 10)
-                .background(Color.gray.opacity(0.15))
-                .cornerRadius(10)
-                .padding(.horizontal)
-            }
         }
     }
     
@@ -227,6 +224,25 @@ struct OpenPowerliftingSearchView: View {
         ZStack {
             VStack {
                 VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 10) {
+                        Text(competition.federation)
+                            .font(.footnote)
+                            .foregroundColor(.gray)
+                            .textCase(.uppercase)
+                        
+                        Text(competition.date)
+                            .font(.footnote)
+                            .foregroundColor(.gray)
+                            .textCase(.uppercase)
+                        
+                        let weightClass = getCompetitionWeightClass(for: competition)
+                        
+                        Text(weightClass == "0" ? competition.division : "\(weightClass) \(competition.division)")
+                            .font(.footnote)
+                            .foregroundColor(.gray)
+                            .textCase(.uppercase)
+                    }
+                    
                     Text(competition.competitionName)
                         .font(.title)
                         .fontWeight(.bold)
@@ -241,16 +257,22 @@ struct OpenPowerliftingSearchView: View {
                     let placeEmoji = getPlaceEmoji(for: competition.placing)
 
                     HStack {
-                        Text("\(formattedTotal) @ \(formattedBodyweight), \(placing) Place \(placeEmoji)")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
-                        Spacer()
-                        
-                        Text("\(dots) DOTS")
-                            .multilineTextAlignment(.trailing)
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+                        if formattedTotal == "0" {
+                            Text("DQ")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        } else {
+                            Text("\(formattedTotal) @ \(formattedBodyweight), \(placing) Place \(placeEmoji)")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            
+                            Spacer()
+                            
+                            Text("\(dots)DOTS")
+                                .multilineTextAlignment(.trailing)
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
                     }
 
                     Divider()
@@ -260,17 +282,9 @@ struct OpenPowerliftingSearchView: View {
                     let benchAttempts = formattedAttempts(for: competition.benchAttempts)
                     let deadliftAttempts = formattedAttempts(for: competition.deadliftAttempts)
                     
-                    Text("S: \(squatAttempts)")
-                        .font(.body)
-                        .foregroundColor(.white)
-                    
-                    Text("B: \(benchAttempts)")
-                        .font(.body)
-                        .foregroundColor(.white)
-                    
-                    Text("D: \(deadliftAttempts)")
-                        .font(.body)
-                        .foregroundColor(.white)
+                    attemptText(label: "S", attempt: squatAttempts)
+                    attemptText(label: "B", attempt: benchAttempts)
+                    attemptText(label: "D", attempt: deadliftAttempts)
                 }
                 .padding()
                 .background(Color.black)
@@ -280,6 +294,24 @@ struct OpenPowerliftingSearchView: View {
                 )
                 .cornerRadius(10)
             }
+        }
+    }
+    
+    private func getCompetitionWeightClass(for competition: Competition) -> String {
+        let weightClass = Double(competition.weightClass) ?? 0
+        let converted = pounds ? weightClass * 2.2046 : weightClass
+        return String(format: "%.1f", converted).replacingOccurrences(of: "\\..*", with: "", options: .regularExpression)
+    }
+    
+    private func attemptText(label: String, attempt: String) -> some View {
+        if attempt.isEmpty {
+            return Text("\(label): ")
+                .font(.body)
+                .foregroundColor(.white)
+        } else {
+            return Text("\(label): \(attempt)")
+                .font(.body)
+                .foregroundColor(.white)
         }
     }
     
@@ -356,8 +388,7 @@ class LifterViewModel: ObservableObject {
         }
         
         let formattedName = lifterName
-            .replacingOccurrences(of: " ", with: "")
-            .replacingOccurrences(of: "#", with: "")
+            .replacingOccurrences(of: "[^a-zA-Z0-9]", with: "", options: .regularExpression)
             .lowercased()
         
         guard let url = URL(string: "https://www.openpowerlifting.org/api/liftercsv/\(formattedName)") else {
@@ -588,8 +619,9 @@ class LifterViewModel: ObservableObject {
         
         if let cachedSuggestions = UserDefaults.standard.array(forKey: cacheKey) as? [String],
            let cacheTimestamp = UserDefaults.standard.object(forKey: timestampKey) as? Date {
+            self.suggestions = cachedSuggestions
+            
             if Date().timeIntervalSince(cacheTimestamp) < cacheExpiration {
-                self.suggestions = cachedSuggestions
                 return
             }
         }

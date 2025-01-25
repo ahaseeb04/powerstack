@@ -50,7 +50,7 @@ struct AttemptSelectionCalculatorView: View {
     }
     
     private var textField: some View {
-        TextField("Enter estimate 3rd attempt (\(SettingsManager.unitPounds))", text: $input)
+        TextField("Estimated 3rd attempt (\(SettingsManager.unitPounds))", text: $input)
             .keyboardType(.decimalPad)
             .modifier(CustomTextFieldModifier())
             .padding(.horizontal)

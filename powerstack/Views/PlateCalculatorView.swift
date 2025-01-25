@@ -81,6 +81,7 @@ struct PlateCalculatorView: View {
         TextField("Enter weight in \(settings.weightUnit)", text: $userInput)
             .keyboardType(.decimalPad)
             .modifier(CustomTextFieldModifier())
+            .overlay(ClearableTextFieldOverlay(text: $userInput))
             .onChange(of: userInput) {
                 updateDistribution()
             }
@@ -210,6 +211,10 @@ struct PlateCalculatorView: View {
     }
     
     private func updateDistribution() {
+        if userInput.isEmpty {
+            distribution = barbellDistribution(weight: 0, bar: 0)
+        }
+        
         if let weight = handleConversion(Double(userInput)), weight > 0 {
             saveSuccess = false
             
@@ -360,7 +365,7 @@ struct BarbellView: View {
                                 .cornerRadius(0)
                                 .overlay(
                                     Rectangle()
-                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                        .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
                                 )
                         }
                     }
@@ -370,10 +375,11 @@ struct BarbellView: View {
                     Rectangle()
                         .fill(.gray)
                         .frame(width: 15, height: 25)
-                        .cornerRadius(2)
+                        .cornerRadius(2, corners: [.topRight, .bottomRight])
                         .overlay(
                             Rectangle()
                                 .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                .cornerRadius(2, corners: [.topRight, .bottomRight])
                         )
                 }
             }
@@ -588,14 +594,41 @@ struct BarbellViewPounds: View {
 extension String {
     var color: Color {
         switch self {
-            case "red": return Color.red
-            case "blue": return Color.blue
+            case "red": return Color(hex: "#dc2626")
+            case "blue": return Color(hex: "#2563eb")
             case "yellow": return Color.yellow
-            case "green": return Color.green
+            case "green": return Color(hex: "#16a34a")
             case "white": return Color.white
-            case "black": return Color.black
+            case "black": return Color(hex: "#000000")
             case "silver": return Color.gray
             default: return Color.gray
         }
+    }
+}
+
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (1, 1, 1, 0)
+        }
+
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue:  Double(b) / 255,
+            opacity: Double(a) / 255
+        )
     }
 }
