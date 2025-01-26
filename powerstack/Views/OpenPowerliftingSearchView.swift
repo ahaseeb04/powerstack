@@ -224,21 +224,26 @@ struct OpenPowerliftingSearchView: View {
         ZStack {
             VStack {
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 10) {
+                    HStack(spacing: 15) {
                         Text(competition.federation)
-                            .font(.footnote)
+                            .font(.system(size: 10))
                             .foregroundColor(.gray)
                             .textCase(.uppercase)
                         
                         Text(competition.date)
-                            .font(.footnote)
+                            .font(.system(size: 10))
                             .foregroundColor(.gray)
                             .textCase(.uppercase)
                         
                         let weightClass = getCompetitionWeightClass(for: competition)
                         
                         Text(weightClass == "0" ? competition.division : "\(weightClass) \(competition.division)")
-                            .font(.footnote)
+                            .font(.system(size: 10))
+                            .foregroundColor(.gray)
+                            .textCase(.uppercase)
+                        
+                        Text(competition.equipment)
+                            .font(.system(size: 10))
                             .foregroundColor(.gray)
                             .textCase(.uppercase)
                     }
@@ -251,7 +256,7 @@ struct OpenPowerliftingSearchView: View {
                     let total = pounds ? competition.total * 2.2046 : competition.total
                     let bodyweight = pounds ? competition.bodyweight * 2.2046 : competition.bodyweight
                     let formattedTotal = String(format: "%.1f", total).replacingOccurrences(of: ".0", with: "")
-                    let formattedBodyweight = String(format: "%.2f", bodyweight)
+                    let formattedBodyweight = String(format: "%.1f", bodyweight)
                     let dots = String(format: "%.2f", competition.dots)
                     let placing = ordinal(of: competition.placing)
                     let placeEmoji = getPlaceEmoji(for: competition.placing)
@@ -298,14 +303,26 @@ struct OpenPowerliftingSearchView: View {
     }
     
     private func getCompetitionWeightClass(for competition: Competition) -> String {
-        let weightClass = Double(competition.weightClass) ?? 0
-        let converted = pounds ? weightClass * 2.2046 : weightClass
-        return String(format: "%.1f", converted).replacingOccurrences(of: "\\..*", with: "", options: .regularExpression)
+        let rawWeightClass = competition.weightClass
+        let numericPart = rawWeightClass
+            .components(separatedBy: CharacterSet(charactersIn: "0123456789.").inverted)
+            .joined()
+        
+        let weightClass = Double(numericPart) ?? 0
+        let convertedWeight = pounds ? weightClass * 2.2046 : weightClass
+        
+        let suffix = rawWeightClass.last == "+" ? "+" : ""
+        
+        let formattedWeight = pounds
+            ? String(format: "%.1f", convertedWeight).replacingOccurrences(of: "\\..*", with: "", options: .regularExpression)
+            : String(format: "%.1f", convertedWeight).replacingOccurrences(of: ".0", with: "")
+        
+        return formattedWeight + suffix
     }
     
     private func attemptText(label: String, attempt: String) -> some View {
         if attempt.isEmpty {
-            return Text("\(label): ")
+            return Text("\(label): 0/0/0")
                 .font(.body)
                 .foregroundColor(.white)
         } else {
