@@ -267,13 +267,17 @@ struct OpenPowerliftingSearchView: View {
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                         } else {
-                            Text("\(formattedTotal) @ \(formattedBodyweight), \(placing) Place \(placeEmoji)")
+                            Text("\(formattedTotal) @ \(formattedBodyweight)")
+                                .font(.subheadline)
+                                .foregroundColor(.gray) +
+                            
+                            Text(placing == "0th" ? "" : ", \(placing) Place \(placeEmoji)")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                             
                             Spacer()
                             
-                            Text("\(dots)DOTS")
+                            Text("\(dots) DOTS")
                                 .multilineTextAlignment(.trailing)
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
@@ -287,9 +291,17 @@ struct OpenPowerliftingSearchView: View {
                     let benchAttempts = formattedAttempts(for: competition.benchAttempts)
                     let deadliftAttempts = formattedAttempts(for: competition.deadliftAttempts)
                     
-                    attemptText(label: "S", attempt: squatAttempts)
-                    attemptText(label: "B", attempt: benchAttempts)
-                    attemptText(label: "D", attempt: deadliftAttempts)
+                    Text("S: \(squatAttempts)")
+                        .font(.body)
+                        .foregroundColor(.white)
+                    
+                    Text("B: \(benchAttempts)")
+                        .font(.body)
+                        .foregroundColor(.white)
+                    
+                    Text("D: \(deadliftAttempts)")
+                        .font(.body)
+                        .foregroundColor(.white)
                 }
                 .padding()
                 .background(Color.black)
@@ -318,18 +330,6 @@ struct OpenPowerliftingSearchView: View {
             : String(format: "%.1f", convertedWeight).replacingOccurrences(of: ".0", with: "")
         
         return formattedWeight + suffix
-    }
-    
-    private func attemptText(label: String, attempt: String) -> some View {
-        if attempt.isEmpty {
-            return Text("\(label): 0/0/0")
-                .font(.body)
-                .foregroundColor(.white)
-        } else {
-            return Text("\(label): \(attempt)")
-                .font(.body)
-                .foregroundColor(.white)
-        }
     }
     
     private func ordinal(of number: Int) -> String {
@@ -366,7 +366,7 @@ struct OpenPowerliftingSearchView: View {
     }
     
     private func formattedAttempts(for attempts: [Double?]) -> String {
-        return attempts.compactMap { attempt -> String? in
+        let res = attempts.compactMap { attempt -> String? in
             guard let attemptValue = attempt else { return nil }
             
             var formattedAttempt = String(format: "%.1f", pounds ? attemptValue * 2.2046 : attemptValue).replacingOccurrences(of: ".0", with: "")
@@ -377,6 +377,8 @@ struct OpenPowerliftingSearchView: View {
             
             return formattedAttempt
         }.joined(separator: "/")
+        
+        return res.isEmpty ? "0/0/0" : res
     }
     
     private func getSuggestion() {
@@ -514,6 +516,7 @@ class LifterViewModel: ObservableObject {
         let bestBenchIndex = headers.firstIndex(of: "Best3BenchKg") ?? 21
         let bestDeadliftIndex = headers.firstIndex(of: "Best3DeadliftKg") ?? 22
         
+        var seenDates = Set<String>()
         var competitions: [Competition] = []
         var personalBests = PersonalBests(squat: 0.0, bench: 0.0, deadlift: 0.0, total: 0.0, dots: 0.0)
         var progress = Progress(squat: 0, bench: 0, deadlift: 0, total: 0, dots: 0)
@@ -527,6 +530,11 @@ class LifterViewModel: ObservableObject {
         for row in rows.dropFirst() {
             let columns = row.components(separatedBy: ",")
             guard columns.count > max(placingIndex, dotsIndex, totalIndex) else { continue }
+            
+            let date = columns[dateIndex]
+            
+            guard !seenDates.contains(date) else { continue }
+            seenDates.insert(date)
             
             var squatAttempts = [
                 Double(columns[squat1Index]),
