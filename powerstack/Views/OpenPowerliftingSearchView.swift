@@ -516,7 +516,7 @@ class LifterViewModel: ObservableObject {
         let bestBenchIndex = headers.firstIndex(of: "Best3BenchKg") ?? 21
         let bestDeadliftIndex = headers.firstIndex(of: "Best3DeadliftKg") ?? 22
         
-        var seenDates = Set<String>()
+        var seenRows = Set<String>()
         var competitions: [Competition] = []
         var personalBests = PersonalBests(squat: 0.0, bench: 0.0, deadlift: 0.0, total: 0.0, dots: 0.0)
         var progress = Progress(squat: 0, bench: 0, deadlift: 0, total: 0, dots: 0)
@@ -531,10 +531,10 @@ class LifterViewModel: ObservableObject {
             let columns = row.components(separatedBy: ",")
             guard columns.count > max(placingIndex, dotsIndex, totalIndex) else { continue }
             
-            let date = columns[dateIndex]
+            let rowIdentifier = "\(columns[dateIndex]) \(columns[bodyweightIndex]) \(columns[dotsIndex])"
             
-            guard !seenDates.contains(date) else { continue }
-            seenDates.insert(date)
+            guard !seenRows.contains(rowIdentifier) else { continue }
+            seenRows.insert(rowIdentifier)
             
             var squatAttempts = [
                 Double(columns[squat1Index]),
