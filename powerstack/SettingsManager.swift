@@ -18,6 +18,7 @@ class SettingsManager: ObservableObject {
     
     static let unitKilograms = "kg"
     static let unitPounds = "lbs"
+    static let lbsPerKg = 2.2046
     
     private let defaults = UserDefaults.standard
     

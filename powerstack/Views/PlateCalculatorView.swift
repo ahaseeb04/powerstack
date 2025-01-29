@@ -269,7 +269,7 @@ struct PlateCalculatorView: View {
         let weightUnit = settings.weightUnit
 
         if (weightUnit == SettingsManager.unitPounds && !poundPlates) || (weightUnit == SettingsManager.unitKilograms && poundPlates) {
-            return weightUnit == SettingsManager.unitPounds ? num / 2.2046 : num * 2.2046
+            return weightUnit == SettingsManager.unitPounds ? num / SettingsManager.lbsPerKg : num * SettingsManager.lbsPerKg
         }
         
         return num
@@ -385,7 +385,7 @@ struct BarbellView: View {
             }
             .offset(x: -70)
             
-            let weight = "\(formattedWeight(totalWeightInKgs())) \(SettingsManager.unitKilograms) / \(formattedWeight(totalWeightInKgs() * 2.2046)) \(SettingsManager.unitPounds)"
+            let weight = "\(formattedWeight(totalWeightInKgs())) \(SettingsManager.unitKilograms) / \(formattedWeight(totalWeightInKgs() * SettingsManager.lbsPerKg)) \(SettingsManager.unitPounds)"
             
             VStack {
                 Spacer()
@@ -513,7 +513,7 @@ struct BarbellViewPounds: View {
             }
             .offset(x: -70)
             
-            let weight = "\(formattedWeight(totalWeightInLbs() / 2.2046)) \(SettingsManager.unitKilograms) / \(formattedWeight(totalWeightInLbs())) \(SettingsManager.unitPounds)"
+            let weight = "\(formattedWeight(totalWeightInLbs() / SettingsManager.lbsPerKg)) \(SettingsManager.unitKilograms) / \(formattedWeight(totalWeightInLbs())) \(SettingsManager.unitPounds)"
             
             VStack {
                 Spacer()

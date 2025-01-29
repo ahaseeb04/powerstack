@@ -58,12 +58,12 @@ struct AttemptSelectionCalculatorView: View {
     
     private func calculate(_ percentage: Double) -> String {
         let num = Double(input) ?? 0
-        let weightInKg = num / 2.2046
+        let weightInKg = num / SettingsManager.lbsPerKg
         
         var resultInKg = weightInKg * (percentage / 100)
         resultInKg = round(resultInKg / 2.5) * 2.5
         
-        let resultInLbs = resultInKg * 2.2046
+        let resultInLbs = resultInKg * SettingsManager.lbsPerKg
         
         return "\(String(format: "%.1f", resultInKg)) / \(String(format: "%.1f", resultInLbs))"
     }

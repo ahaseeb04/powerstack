@@ -155,10 +155,10 @@ struct OpenPowerliftingSearchView: View {
         Group {
             if let lifter = viewModel.lifters.first {
                 let (squat, bench, deadlift, total, dots) = (
-                    pounds ? lifter.personalBests.squat * 2.2046 : lifter.personalBests.squat,
-                    pounds ? lifter.personalBests.bench * 2.2046 : lifter.personalBests.bench,
-                    pounds ? lifter.personalBests.deadlift * 2.2046 : lifter.personalBests.deadlift,
-                    pounds ? lifter.personalBests.total * 2.2046 : lifter.personalBests.total,
+                    pounds ? lifter.personalBests.squat * SettingsManager.lbsPerKg : lifter.personalBests.squat,
+                    pounds ? lifter.personalBests.bench * SettingsManager.lbsPerKg : lifter.personalBests.bench,
+                    pounds ? lifter.personalBests.deadlift * SettingsManager.lbsPerKg : lifter.personalBests.deadlift,
+                    pounds ? lifter.personalBests.total * SettingsManager.lbsPerKg : lifter.personalBests.total,
                     lifter.personalBests.dots
                 )
                 
@@ -253,8 +253,8 @@ struct OpenPowerliftingSearchView: View {
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                     
-                    let total = pounds ? competition.total * 2.2046 : competition.total
-                    let bodyweight = pounds ? competition.bodyweight * 2.2046 : competition.bodyweight
+                    let total = pounds ? competition.total * SettingsManager.lbsPerKg : competition.total
+                    let bodyweight = pounds ? competition.bodyweight * SettingsManager.lbsPerKg : competition.bodyweight
                     let formattedTotal = String(format: "%.1f", total).replacingOccurrences(of: ".0", with: "")
                     let formattedBodyweight = String(format: "%.1f", bodyweight)
                     let dots = String(format: "%.2f", competition.dots)
@@ -321,7 +321,7 @@ struct OpenPowerliftingSearchView: View {
             .joined()
         
         let weightClass = Double(numericPart) ?? 0
-        let convertedWeight = pounds ? weightClass * 2.2046 : weightClass
+        let convertedWeight = pounds ? weightClass * SettingsManager.lbsPerKg : weightClass
         
         let suffix = rawWeightClass.last == "+" ? "+" : ""
         
@@ -369,7 +369,7 @@ struct OpenPowerliftingSearchView: View {
         let res = attempts.compactMap { attempt -> String? in
             guard let attemptValue = attempt else { return nil }
             
-            var formattedAttempt = String(format: "%.1f", pounds ? attemptValue * 2.2046 : attemptValue).replacingOccurrences(of: ".0", with: "")
+            var formattedAttempt = String(format: "%.1f", pounds ? attemptValue * SettingsManager.lbsPerKg : attemptValue).replacingOccurrences(of: ".0", with: "")
             
             if formattedAttempt.hasPrefix("-") {
                 formattedAttempt = formattedAttempt.replacingOccurrences(of: "-", with: "") + "x"

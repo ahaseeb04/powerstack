@@ -244,7 +244,7 @@ struct PowerliftingScoreCalculatorView: View {
     private func handleConversion(_ num: Double?) -> Double? {
         guard let num = num else { return nil }
     
-        let conversionFactor = settings.scoreCalculatorWeightUnit == SettingsManager.unitPounds ? 2.2046 : 1.0
+        let conversionFactor = settings.scoreCalculatorWeightUnit == SettingsManager.unitPounds ? SettingsManager.lbsPerKg : 1.0
         
         return num / conversionFactor
     }
