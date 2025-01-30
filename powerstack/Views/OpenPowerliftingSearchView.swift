@@ -415,6 +415,23 @@ class LifterViewModel: ObservableObject {
             return
         }
         
+        let cacheKey = "lifterData_\(formattedName)"
+        let cacheExpiryKey = "cacheExpiry_\(formattedName)"
+        let currentTime = Date()
+        
+        if let cachedData = UserDefaults.standard.data(forKey: cacheKey),
+           let cachedLifter = try? JSONDecoder().decode(LifterData.self, from: cachedData),
+           let expiryTime = UserDefaults.standard.object(forKey: cacheExpiryKey) as? Date,
+           currentTime < expiryTime
+        {
+            DispatchQueue.main.async {
+                self.lifters = [cachedLifter.lifter]
+                self.resourceFound = true
+            }
+            
+            return
+        }
+        
         db.collection("lifters").document(lifterName).getDocument { document, error in
             if let error = error {
                 DispatchQueue.main.async {
@@ -435,6 +452,8 @@ class LifterViewModel: ObservableObject {
                         if let lifterData = try? document.data(as: LifterData.self) {
                             self.lifters = [lifterData.lifter]
                             
+                            self.cacheLifterData(lifterData, cacheKey, cacheExpiryKey)
+                            
                             DispatchQueue.main.async {
                                 self.resourceFound = true
                             }
@@ -444,6 +463,15 @@ class LifterViewModel: ObservableObject {
             } else {
                 self.fetchAndParseCsv(from: url)
             }
+        }
+    }
+    
+    func cacheLifterData(_ lifterData: LifterData, _ cacheKey: String, _ cacheExpiryKey: String) {
+        let expiryDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())
+        
+        if let encoded = try? JSONEncoder().encode(lifterData) {
+            UserDefaults.standard.set(encoded, forKey: cacheKey)
+            UserDefaults.standard.set(expiryDate, forKey: cacheExpiryKey)
         }
     }
     
