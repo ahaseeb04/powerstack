@@ -75,7 +75,7 @@ struct OpenPowerliftingSearchView: View {
                 Text("OpenPowerlifting Search")
             }
         }
-        .onAppear {
+        .onAppear {            
             viewModel.fetchSuggestions()
         }
         .onLeftSwipe {
@@ -180,11 +180,11 @@ struct OpenPowerliftingSearchView: View {
         Group {
             if let lifter = viewModel.lifters.first, lifter.competitions.count > 1 {
                 let (squat, bench, deadlift, total, dots) = (
-                    lifter.progress.squat,
-                    lifter.progress.bench,
-                    lifter.progress.deadlift,
-                    lifter.progress.total,
-                    lifter.progress.dots
+                    calculateProgress(lifter.personalBests.squat, lifter.firstCompetition.squat),
+                    calculateProgress(lifter.personalBests.bench, lifter.firstCompetition.bench),
+                    calculateProgress(lifter.personalBests.deadlift, lifter.firstCompetition.deadlift),
+                    calculateProgress(lifter.personalBests.total, lifter.firstCompetition.total),
+                    calculateProgress(lifter.personalBests.dots, lifter.firstCompetition.dots)
                 )
                 
                 Card(
@@ -314,6 +314,10 @@ struct OpenPowerliftingSearchView: View {
         }
     }
     
+    private func calculateProgress(_ best: Double, _ first: Double) -> Int {
+        return Int(((best - first) / first * 100).rounded())
+    }
+    
     private func getCompetitionWeightClass(for competition: Competition) -> String {
         let rawWeightClass = competition.weightClass
         let numericPart = rawWeightClass
@@ -415,22 +419,22 @@ class LifterViewModel: ObservableObject {
             return
         }
         
-        let cacheKey = "lifterData_\(formattedName)"
-        let cacheExpiryKey = "cacheExpiry_\(formattedName)"
-        let currentTime = Date()
-        
-        if let cachedData = UserDefaults.standard.data(forKey: cacheKey),
-           let cachedLifter = try? JSONDecoder().decode(LifterData.self, from: cachedData),
-           let expiryTime = UserDefaults.standard.object(forKey: cacheExpiryKey) as? Date,
-           currentTime < expiryTime
-        {
-            DispatchQueue.main.async {
-                self.lifters = [cachedLifter.lifter]
-                self.resourceFound = true
-            }
-            
-            return
-        }
+//        let cacheKey = "lifterData_\(formattedName)"
+//        let cacheExpiryKey = "cacheExpiry_\(formattedName)"
+//        let currentTime = Date()
+//        
+//        if let cachedData = UserDefaults.standard.data(forKey: cacheKey),
+//           let cachedLifter = try? JSONDecoder().decode(LifterData.self, from: cachedData),
+//           let expiryTime = UserDefaults.standard.object(forKey: cacheExpiryKey) as? Date,
+//           currentTime < expiryTime
+//        {
+//            DispatchQueue.main.async {
+//                self.lifters = [cachedLifter.lifter]
+//                self.resourceFound = true
+//            }
+//            
+//            return
+//        }
         
         db.collection("lifters").document(lifterName).getDocument { document, error in
             if let error = error {
@@ -452,7 +456,7 @@ class LifterViewModel: ObservableObject {
                         if let lifterData = try? document.data(as: LifterData.self) {
                             self.lifters = [lifterData.lifter]
                             
-                            self.cacheLifterData(lifterData, cacheKey, cacheExpiryKey)
+//                            self.cacheLifterData(lifterData, cacheKey, cacheExpiryKey)
                             
                             DispatchQueue.main.async {
                                 self.resourceFound = true
@@ -547,7 +551,6 @@ class LifterViewModel: ObservableObject {
         var seenRows = Set<String>()
         var competitions: [Competition] = []
         var personalBests = PersonalBests(squat: 0.0, bench: 0.0, deadlift: 0.0, total: 0.0, dots: 0.0)
-        var progress = Progress(squat: 0, bench: 0, deadlift: 0, total: 0, dots: 0)
         
         var firstMeetSquat: Double = 0
         var firstMeetBench: Double = 0
@@ -640,15 +643,20 @@ class LifterViewModel: ObservableObject {
             competitions.append(competition)
         }
         
-        progress = Progress(
-            squat: computeProgress(first: firstMeetSquat, best: personalBests.squat),
-            bench: computeProgress(first: firstMeetBench, best: personalBests.bench),
-            deadlift: computeProgress(first: firstMeetDeadlift, best: personalBests.deadlift),
-            total: computeProgress(first: firstMeetTotal, best: personalBests.total),
-            dots: computeProgress(first: firstMeetDots, best: personalBests.dots)
+        let firstCompetition = FirstCompetition(
+            squat: firstMeetSquat,
+            bench: firstMeetBench,
+            deadlift: firstMeetDeadlift,
+            total: firstMeetTotal,
+            dots: firstMeetDots
         )
         
-        let lifter = Lifter(name: rows.dropFirst().first?.components(separatedBy: ",")[nameIndex] ?? "Unknown", personalBests: personalBests, progress: progress, competitions: competitions)
+        let lifter = Lifter(
+            name: rows.dropFirst().first?.components(separatedBy: ",")[nameIndex] ?? "Unknown",
+            personalBests: personalBests,
+            firstCompetition: firstCompetition,
+            competitions: competitions
+        )
         
         let lifterData = LifterData(lifter: lifter, timestamp: Date())
         
@@ -668,7 +676,7 @@ class LifterViewModel: ObservableObject {
     func fetchSuggestions() {
         let cacheKey = "cachedSuggestions"
         let timestampKey = "lastSuggestionFetchTimestamp"
-        let cacheExpiration: TimeInterval = 60 * 60
+        let cacheExpiration: TimeInterval = 0
         
         if let cachedSuggestions = UserDefaults.standard.array(forKey: cacheKey) as? [String],
            let cacheTimestamp = UserDefaults.standard.object(forKey: timestampKey) as? Date {
@@ -693,12 +701,6 @@ class LifterViewModel: ObservableObject {
             
             self.suggestions = suggestions
         }
-    }
-    
-    func computeProgress(first: Double, best: Double) -> Int {
-        guard first > 0 else { return 0 }
-        
-        return Int(((best - first) / first * 100).rounded())
     }
     
     func reset() {
@@ -726,7 +728,7 @@ struct Lifter: Identifiable, Codable {
     var id = UUID()
     let name: String
     let personalBests: PersonalBests
-    let progress: Progress
+    let firstCompetition: FirstCompetition
     let competitions: [Competition]
 }
 
@@ -755,10 +757,10 @@ struct PersonalBests: Codable {
     let dots: Double
 }
 
-struct Progress: Codable {
-    let squat: Int
-    let bench: Int
-    let deadlift: Int
-    let total: Int
-    let dots: Int
+struct FirstCompetition: Codable {
+    let squat: Double
+    let bench: Double
+    let deadlift: Double
+    let total: Double
+    let dots: Double
 }
