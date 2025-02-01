@@ -179,12 +179,8 @@ struct OpenPowerliftingSearchView: View {
     private var lifterProgressView: some View {
         Group {
             if let lifter = viewModel.lifters.first, lifter.competitions.count > 1 {
-                let (squat, bench, deadlift, total, dots) = (
-                    calculateProgress(lifter.personalBests.squat, lifter.firstCompetition.squat),
-                    calculateProgress(lifter.personalBests.bench, lifter.firstCompetition.bench),
-                    calculateProgress(lifter.personalBests.deadlift, lifter.firstCompetition.deadlift),
-                    calculateProgress(lifter.personalBests.total, lifter.firstCompetition.total),
-                    calculateProgress(lifter.personalBests.dots, lifter.firstCompetition.dots)
+                let (squat, bench, deadlift, total, dots) = calculateProgress(
+                    personalBests: lifter.personalBests, firstCompetition: lifter.firstCompetition
                 )
                 
                 Card(
@@ -314,8 +310,21 @@ struct OpenPowerliftingSearchView: View {
         }
     }
     
-    private func calculateProgress(_ best: Double, _ first: Double) -> Int {
-        return Int(((best - first) / first * 100).rounded())
+    private func calculateProgress(personalBests: PersonalBests, firstCompetition: FirstCompetition) -> (squat: Int, bench: Int, deadlift: Int, total: Int, dots: Int) {
+        let bests = [personalBests.squat, personalBests.bench, personalBests.deadlift, personalBests.total, personalBests.dots]
+        let firsts = [firstCompetition.squat, firstCompetition.bench, firstCompetition.deadlift, firstCompetition.total, firstCompetition.dots]
+        
+        let progress = zip(bests, firsts).map { best, first in
+            Int(((best - first) / first * 100).rounded())
+        }
+        
+        return (
+            squat: progress[0],
+            bench: progress[1],
+            deadlift: progress[2],
+            total: progress[3],
+            dots: progress[4]
+        )
     }
     
     private func getCompetitionWeightClass(for competition: Competition) -> String {
