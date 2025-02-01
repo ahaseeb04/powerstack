@@ -79,7 +79,14 @@ struct PowerliftingScoreCalculatorView: View {
         .onChange(of: settings.scoreCalculatorWeightUnit) {
             update()
         }
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                }
+            }
+            
             ToolbarItem(placement: .principal) {
                 Text("Powerlifting Score Calculator")
             }
@@ -237,7 +244,7 @@ struct PowerliftingScoreCalculatorView: View {
     private func handleConversion(_ num: Double?) -> Double? {
         guard let num = num else { return nil }
     
-        let conversionFactor = settings.scoreCalculatorWeightUnit == SettingsManager.unitPounds ? 2.2046 : 1.0
+        let conversionFactor = settings.scoreCalculatorWeightUnit == SettingsManager.unitPounds ? SettingsManager.lbsPerKg : 1.0
         
         return num / conversionFactor
     }

@@ -42,3 +42,4 @@ struct ContentView_Previews: PreviewProvider {
             .environmentObject(SettingsManager())
     }
 }
+

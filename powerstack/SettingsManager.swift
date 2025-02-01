@@ -18,6 +18,7 @@ class SettingsManager: ObservableObject {
     
     static let unitKilograms = "kg"
     static let unitPounds = "lbs"
+    static let lbsPerKg = 2.2046
     
     private let defaults = UserDefaults.standard
     
@@ -26,11 +27,11 @@ class SettingsManager: ObservableObject {
     }
     
     @Published var disableImagePreview: Bool {
-        didSet { defaults.set(disableImagePreview, forKey: hideSaveButtonKey) }
+        didSet { defaults.set(disableImagePreview, forKey: disableImagePreviewKey) }
     }
     
     @Published var disableSearchPrediction: Bool {
-        didSet { defaults.set(disableSearchPrediction, forKey: hideSaveButtonKey) }
+        didSet { defaults.set(disableSearchPrediction, forKey: disableSearchPredictionKey) }
     }
     
     @Published var weightUnit: String {

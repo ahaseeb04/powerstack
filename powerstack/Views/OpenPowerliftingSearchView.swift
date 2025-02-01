@@ -20,7 +20,6 @@ struct OpenPowerliftingSearchView: View {
     @AppStorage("openPowerliftingSearchPounds") private var pounds: Bool = false
     
     @State private var suggestion: String? = nil
-    @State private var filteredSuggestions: [String] = []
     
     @State private var invoked: Bool = false
     
@@ -64,12 +63,19 @@ struct OpenPowerliftingSearchView: View {
             .dismissKeyboardOnTap()
             .ignoresSafeArea(.keyboard)
         }
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                }
+            }
+            
             ToolbarItem(placement: .principal) {
                 Text("OpenPowerlifting Search")
             }
         }
-        .onAppear {
+        .onAppear {            
             viewModel.fetchSuggestions()
         }
         .onLeftSwipe {
@@ -82,12 +88,13 @@ struct OpenPowerliftingSearchView: View {
             HStack(alignment: .center) {
                 TextField("Enter lifter name", text: $lifterName)
                     .modifier(CustomTextFieldModifier())
+                    .overlay(ClearableTextFieldOverlay(text: $lifterName))
                     .onChange(of: lifterName) {
                         if lifterName.isEmpty {
                             viewModel.reset()
                         }
                         
-                        filterSuggestions()
+                        getSuggestion()
                         
                         debounceTimer?.invalidate()
                                         
@@ -128,6 +135,7 @@ struct OpenPowerliftingSearchView: View {
         ZStack {
             TextField("Enter lifter name", text: $lifterName)
                 .modifier(CustomTextFieldModifier())
+                .overlay(ClearableTextFieldOverlay(text: $lifterName))
                 .padding(.horizontal)
                 .onChange(of: lifterName) {
                     if lifterName.isEmpty {
@@ -147,10 +155,10 @@ struct OpenPowerliftingSearchView: View {
         Group {
             if let lifter = viewModel.lifters.first {
                 let (squat, bench, deadlift, total, dots) = (
-                    pounds ? lifter.personalBests.squat * 2.2046 : lifter.personalBests.squat,
-                    pounds ? lifter.personalBests.bench * 2.2046 : lifter.personalBests.bench,
-                    pounds ? lifter.personalBests.deadlift * 2.2046 : lifter.personalBests.deadlift,
-                    pounds ? lifter.personalBests.total * 2.2046 : lifter.personalBests.total,
+                    pounds ? lifter.personalBests.squat * SettingsManager.lbsPerKg : lifter.personalBests.squat,
+                    pounds ? lifter.personalBests.bench * SettingsManager.lbsPerKg : lifter.personalBests.bench,
+                    pounds ? lifter.personalBests.deadlift * SettingsManager.lbsPerKg : lifter.personalBests.deadlift,
+                    pounds ? lifter.personalBests.total * SettingsManager.lbsPerKg : lifter.personalBests.total,
                     lifter.personalBests.dots
                 )
                 
@@ -172,11 +180,11 @@ struct OpenPowerliftingSearchView: View {
         Group {
             if let lifter = viewModel.lifters.first, lifter.competitions.count > 1 {
                 let (squat, bench, deadlift, total, dots) = (
-                    lifter.progress.squat,
-                    lifter.progress.bench,
-                    lifter.progress.deadlift,
-                    lifter.progress.total,
-                    lifter.progress.dots
+                    calculateProgress(lifter.personalBests.squat, lifter.firstCompetition.squat),
+                    calculateProgress(lifter.personalBests.bench, lifter.firstCompetition.bench),
+                    calculateProgress(lifter.personalBests.deadlift, lifter.firstCompetition.deadlift),
+                    calculateProgress(lifter.personalBests.total, lifter.firstCompetition.total),
+                    calculateProgress(lifter.personalBests.dots, lifter.firstCompetition.dots)
                 )
                 
                 Card(
@@ -216,21 +224,65 @@ struct OpenPowerliftingSearchView: View {
         ZStack {
             VStack {
                 VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 15) {
+                        Text(competition.federation)
+                            .font(.system(size: 10))
+                            .foregroundColor(.gray)
+                            .textCase(.uppercase)
+                        
+                        Text(competition.date)
+                            .font(.system(size: 10))
+                            .foregroundColor(.gray)
+                            .textCase(.uppercase)
+                        
+                        let weightClass = getCompetitionWeightClass(for: competition)
+                        
+                        Text(weightClass == "0" ? competition.division : "\(weightClass) \(competition.division)")
+                            .font(.system(size: 10))
+                            .foregroundColor(.gray)
+                            .textCase(.uppercase)
+                        
+                        Text(competition.equipment)
+                            .font(.system(size: 10))
+                            .foregroundColor(.gray)
+                            .textCase(.uppercase)
+                    }
+                    
                     Text(competition.competitionName)
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                     
-                    let total = pounds ? competition.total * 2.2046 : competition.total
-                    let bodyweight = pounds ? competition.bodyweight * 2.2046 : competition.bodyweight
+                    let total = pounds ? competition.total * SettingsManager.lbsPerKg : competition.total
+                    let bodyweight = pounds ? competition.bodyweight * SettingsManager.lbsPerKg : competition.bodyweight
                     let formattedTotal = String(format: "%.1f", total).replacingOccurrences(of: ".0", with: "")
-                    let formattedBodyweight = String(format: "%.2f", bodyweight)
+                    let formattedBodyweight = String(format: "%.1f", bodyweight)
+                    let dots = String(format: "%.2f", competition.dots)
                     let placing = ordinal(of: competition.placing)
                     let placeEmoji = getPlaceEmoji(for: competition.placing)
 
-                    Text("\(formattedTotal) @ \(formattedBodyweight), \(placing) Place \(placeEmoji)")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                    HStack {
+                        if formattedTotal == "0" {
+                            Text("DQ")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        } else {
+                            Text("\(formattedTotal) @ \(formattedBodyweight)")
+                                .font(.subheadline)
+                                .foregroundColor(.gray) +
+                            
+                            Text(placing == "0th" ? "" : ", \(placing) Place \(placeEmoji)")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            
+                            Spacer()
+                            
+                            Text("\(dots) DOTS")
+                                .multilineTextAlignment(.trailing)
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                    }
 
                     Divider()
                         .background(Color.gray)
@@ -260,6 +312,28 @@ struct OpenPowerliftingSearchView: View {
                 .cornerRadius(10)
             }
         }
+    }
+    
+    private func calculateProgress(_ best: Double, _ first: Double) -> Int {
+        return Int(((best - first) / first * 100).rounded())
+    }
+    
+    private func getCompetitionWeightClass(for competition: Competition) -> String {
+        let rawWeightClass = competition.weightClass
+        let numericPart = rawWeightClass
+            .components(separatedBy: CharacterSet(charactersIn: "0123456789.").inverted)
+            .joined()
+        
+        let weightClass = Double(numericPart) ?? 0
+        let convertedWeight = pounds ? weightClass * SettingsManager.lbsPerKg : weightClass
+        
+        let suffix = rawWeightClass.last == "+" ? "+" : ""
+        
+        let formattedWeight = pounds
+            ? String(format: "%.1f", convertedWeight).replacingOccurrences(of: "\\..*", with: "", options: .regularExpression)
+            : String(format: "%.1f", convertedWeight).replacingOccurrences(of: ".0", with: "")
+        
+        return formattedWeight + suffix
     }
     
     private func ordinal(of number: Int) -> String {
@@ -296,10 +370,10 @@ struct OpenPowerliftingSearchView: View {
     }
     
     private func formattedAttempts(for attempts: [Double?]) -> String {
-        return attempts.compactMap { attempt -> String? in
+        let res = attempts.compactMap { attempt -> String? in
             guard let attemptValue = attempt else { return nil }
             
-            var formattedAttempt = String(format: "%.1f", pounds ? attemptValue * 2.2046 : attemptValue).replacingOccurrences(of: ".0", with: "")
+            var formattedAttempt = String(format: "%.1f", pounds ? attemptValue * SettingsManager.lbsPerKg : attemptValue).replacingOccurrences(of: ".0", with: "")
             
             if formattedAttempt.hasPrefix("-") {
                 formattedAttempt = formattedAttempt.replacingOccurrences(of: "-", with: "") + "x"
@@ -307,53 +381,18 @@ struct OpenPowerliftingSearchView: View {
             
             return formattedAttempt
         }.joined(separator: "/")
+        
+        return res.isEmpty ? "0/0/0" : res
     }
     
-    private func filterSuggestions() {
-        if lifterName.count < 3 {
+    private func getSuggestion() {
+        guard lifterName.count >= 3 else {
             suggestion = nil
             return
         }
         
-        filteredSuggestions = viewModel.suggestions.filter { $0.lowercased().hasPrefix(lifterName.lowercased()) }
-        
-        suggestion = filteredSuggestions.first ?? nil
-    }
-}
-
-struct Card: View {
-    var title: String
-    var data: [(label: String, value: String)]
-    
-    var body: some View {
-        VStack(spacing: 10) {
-            Text(title)
-                .font(.system(size: 24))
-                .bold()
-                .foregroundColor(.white)
-                .padding()
-            
-            HStack(spacing: 0) {
-                ForEach(data, id: \.label) { item in
-                    VStack {
-                        Text(item.label)
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        Text(item.value)
-                            .foregroundColor(.white)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-            .padding()
-            .background(.clear)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-            )
-            .cornerRadius(10)
-            .padding(.horizontal)
-        }
+        suggestion = viewModel.suggestions
+            .first { $0.lowercased().hasPrefix(lifterName.lowercased()) }
     }
 }
 
@@ -372,8 +411,7 @@ class LifterViewModel: ObservableObject {
         }
         
         let formattedName = lifterName
-            .replacingOccurrences(of: " ", with: "")
-            .replacingOccurrences(of: "#", with: "")
+            .replacingOccurrences(of: "[^a-zA-Z0-9]", with: "", options: .regularExpression)
             .lowercased()
         
         guard let url = URL(string: "https://www.openpowerlifting.org/api/liftercsv/\(formattedName)") else {
@@ -482,9 +520,9 @@ class LifterViewModel: ObservableObject {
         let bestBenchIndex = headers.firstIndex(of: "Best3BenchKg") ?? 21
         let bestDeadliftIndex = headers.firstIndex(of: "Best3DeadliftKg") ?? 22
         
+        var seenRows = Set<String>()
         var competitions: [Competition] = []
         var personalBests = PersonalBests(squat: 0.0, bench: 0.0, deadlift: 0.0, total: 0.0, dots: 0.0)
-        var progress = Progress(squat: 0, bench: 0, deadlift: 0, total: 0, dots: 0)
         
         var firstMeetSquat: Double = 0
         var firstMeetBench: Double = 0
@@ -495,6 +533,11 @@ class LifterViewModel: ObservableObject {
         for row in rows.dropFirst() {
             let columns = row.components(separatedBy: ",")
             guard columns.count > max(placingIndex, dotsIndex, totalIndex) else { continue }
+            
+            let rowIdentifier = "\(columns[dateIndex]) \(columns[bodyweightIndex]) \(columns[dotsIndex])"
+            
+            guard !seenRows.contains(rowIdentifier) else { continue }
+            seenRows.insert(rowIdentifier)
             
             var squatAttempts = [
                 Double(columns[squat1Index]),
@@ -543,13 +586,15 @@ class LifterViewModel: ObservableObject {
                 firstMeetDots = dots
             }
             
-            personalBests = PersonalBests(
-                squat: max(personalBests.squat, squatAttempts.compactMap{ $0 }.max() ?? 0.0),
-                bench: max(personalBests.bench, benchAttempts.compactMap{ $0 }.max() ?? 0.0),
-                deadlift: max(personalBests.deadlift, deadliftAttempts.compactMap{ $0 }.max() ?? 0.0),
-                total: max(personalBests.total, total),
-                dots: max(personalBests.dots, dots)
-            )
+            if total != 0 {
+                personalBests = PersonalBests(
+                    squat: max(personalBests.squat, squatAttempts.compactMap{ $0 }.max() ?? 0.0),
+                    bench: max(personalBests.bench, benchAttempts.compactMap{ $0 }.max() ?? 0.0),
+                    deadlift: max(personalBests.deadlift, deadliftAttempts.compactMap{ $0 }.max() ?? 0.0),
+                    total: max(personalBests.total, total),
+                    dots: max(personalBests.dots, dots)
+                )
+            }
             
             let competition = Competition(
                 placing: Int(columns[placingIndex]) ?? 0,
@@ -570,15 +615,20 @@ class LifterViewModel: ObservableObject {
             competitions.append(competition)
         }
         
-        progress = Progress(
-            squat: computeProgress(first: firstMeetSquat, best: personalBests.squat),
-            bench: computeProgress(first: firstMeetBench, best: personalBests.bench),
-            deadlift: computeProgress(first: firstMeetDeadlift, best: personalBests.deadlift),
-            total: computeProgress(first: firstMeetTotal, best: personalBests.total),
-            dots: computeProgress(first: firstMeetDots, best: personalBests.dots)
+        let firstCompetition = FirstCompetition(
+            squat: firstMeetSquat,
+            bench: firstMeetBench,
+            deadlift: firstMeetDeadlift,
+            total: firstMeetTotal,
+            dots: firstMeetDots
         )
         
-        let lifter = Lifter(name: rows.dropFirst().first?.components(separatedBy: ",")[nameIndex] ?? "Unknown", personalBests: personalBests, progress: progress, competitions: competitions)
+        let lifter = Lifter(
+            name: rows.dropFirst().first?.components(separatedBy: ",")[nameIndex] ?? "Unknown",
+            personalBests: personalBests,
+            firstCompetition: firstCompetition,
+            competitions: competitions
+        )
         
         let lifterData = LifterData(lifter: lifter, timestamp: Date())
         
@@ -596,21 +646,33 @@ class LifterViewModel: ObservableObject {
     }
     
     func fetchSuggestions() {
+        let cacheKey = "cachedSuggestions"
+        let timestampKey = "lastSuggestionFetchTimestamp"
+        let cacheExpiration: TimeInterval = 60 * 60
+        
+        if let cachedSuggestions = UserDefaults.standard.array(forKey: cacheKey) as? [String],
+           let cacheTimestamp = UserDefaults.standard.object(forKey: timestampKey) as? Date {
+            self.suggestions = cachedSuggestions
+            
+            if Date().timeIntervalSince(cacheTimestamp) < cacheExpiration {
+                return
+            }
+        }
+        
         db.collection("lifters").getDocuments { [self] snapshot, error in
             guard let documents = snapshot?.documents else {
                 return
             }
             
-            self.suggestions = documents
+            let suggestions = documents
                 .sorted { getValue(from: $0, key: "personalBests.dots") > getValue(from: $1, key: "personalBests.dots") }
                 .map { $0.documentID }
+            
+            UserDefaults.standard.set(suggestions, forKey: cacheKey)
+            UserDefaults.standard.set(Date(), forKey: timestampKey)
+            
+            self.suggestions = suggestions
         }
-    }
-    
-    func computeProgress(first: Double, best: Double) -> Int {
-        guard first > 0 else { return 0 }
-        
-        return Int(((best - first) / first * 100).rounded())
     }
     
     func reset() {
@@ -638,7 +700,7 @@ struct Lifter: Identifiable, Codable {
     var id = UUID()
     let name: String
     let personalBests: PersonalBests
-    let progress: Progress
+    let firstCompetition: FirstCompetition
     let competitions: [Competition]
 }
 
@@ -667,10 +729,10 @@ struct PersonalBests: Codable {
     let dots: Double
 }
 
-struct Progress: Codable {
-    let squat: Int
-    let bench: Int
-    let deadlift: Int
-    let total: Int
-    let dots: Int
+struct FirstCompetition: Codable {
+    let squat: Double
+    let bench: Double
+    let deadlift: Double
+    let total: Double
+    let dots: Double
 }
