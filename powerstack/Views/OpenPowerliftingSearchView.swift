@@ -225,7 +225,7 @@ struct OpenPowerliftingSearchView: View {
                         (label: "Bench", value: "+\(formatValue(bench, decimals: 1))"),
                         (label: "Deadlift", value: "+\(formatValue(deadlift, decimals: 1))"),
                         (label: "Total", value: "+\(formatValue(total, decimals: 1))"),
-                        (label: "Dots", value: "+\(dots)")
+                        (label: "Dots", value: "+\(formatValue(dots, decimals: 2))")
                     ]
                 )
             }
