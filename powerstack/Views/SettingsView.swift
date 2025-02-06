@@ -12,6 +12,7 @@ struct SettingsView: View {
     
     @State var selectedUnit: String = ""
     @State var scoreCalculatorWeightUnit: String = ""
+    @State var progressCalculationType: String = ""
     
     var body: some View {
         ZStack {
@@ -21,20 +22,15 @@ struct SettingsView: View {
                 Form {
                     Section(header: Text("Plate Calculator")) {
                         HStack {
-                            Text("Weight Input")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            
-                            Picker("Weight Unit", selection: $selectedUnit) {
+                            Picker("Weight Input", selection: $selectedUnit) {
                                 Text(SettingsManager.unitPounds).tag(SettingsManager.unitPounds)
                                 Text(SettingsManager.unitKilograms).tag(SettingsManager.unitKilograms)
                             }
-                            .pickerStyle(SegmentedPickerStyle())
-                            .frame(maxWidth: 100)
                             .onAppear {
                                 selectedUnit = settings.weightUnit
                             }
-                            .onChange(of: selectedUnit) { oldValue, newValue in
-                                settings.weightUnit = newValue
+                            .onChange(of: selectedUnit) {
+                                settings.weightUnit = selectedUnit
                             }
                         }
                         
@@ -42,16 +38,16 @@ struct SettingsView: View {
                             Text("Hide Save to Camera Roll Button")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: settings.hideSaveButton) { oldValue, newValue in
-                            settings.hideSaveButton = newValue
+                        .onChange(of: settings.hideSaveButton) { oldVal, newVal in
+                            settings.hideSaveButton = newVal
                         }
                         
                         Toggle(isOn: $settings.disableImagePreview) {
-                            Text("Disable 2-Step Confirmation")
+                            Text("Disable Image Preview")
                                 .foregroundColor(.white)
                         }
-                        .onChange(of: settings.disableImagePreview) { oldValue, newValue in
-                            settings.disableImagePreview = newValue
+                        .onChange(of: settings.disableImagePreview) { oldVal, newVal in
+                            settings.disableImagePreview = newVal
                         }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
@@ -65,26 +61,32 @@ struct SettingsView: View {
                         .onChange(of: settings.disableSearchPrediction) { oldValue, newValue in
                             settings.disableSearchPrediction = newValue
                         }
+                        
+                        Picker("Progress Calculation", selection: $progressCalculationType) {
+                            Text("Percentage").tag(SettingsManager.progressCalculationTypePercentage)
+                            Text("Actual Increase").tag(SettingsManager.progressCalculationTypeTotal)
+                        }
+                        .onAppear {
+                            progressCalculationType = settings.progressCalculationType
+                        }
+                        .onChange(of: progressCalculationType) {
+                            settings.progressCalculationType = progressCalculationType
+                        }
                     }
                     .listRowBackground(Color.gray.opacity(0.2))
                     .foregroundColor(.white)
                     
                     Section(header: Text("Powerlifting Score Calculator")) {
                         HStack {
-                            Text("Weight Input")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            
-                            Picker("Weight Unit", selection: $scoreCalculatorWeightUnit) {
+                            Picker("Weight Input", selection: $scoreCalculatorWeightUnit) {
                                 Text(SettingsManager.unitPounds).tag(SettingsManager.unitPounds)
                                 Text(SettingsManager.unitKilograms).tag(SettingsManager.unitKilograms)
                             }
-                            .pickerStyle(SegmentedPickerStyle())
-                            .frame(maxWidth: 100)
                             .onAppear {
                                 scoreCalculatorWeightUnit = settings.scoreCalculatorWeightUnit
                             }
-                            .onChange(of: scoreCalculatorWeightUnit) { oldValue, newValue in
-                                settings.scoreCalculatorWeightUnit = newValue
+                            .onChange(of: scoreCalculatorWeightUnit) {
+                                settings.scoreCalculatorWeightUnit = scoreCalculatorWeightUnit
                             }
                         }
                         

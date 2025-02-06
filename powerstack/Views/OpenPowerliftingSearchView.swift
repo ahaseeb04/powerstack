@@ -53,7 +53,13 @@ struct OpenPowerliftingSearchView: View {
                         }
                         
                         lifterPersonalBestsView
-                        lifterProgressView
+                        
+                        if settings.progressCalculationType == SettingsManager.progressCalculationTypePercentage {
+                            lifterProgressViewPercentage
+                        } else {
+                            lifterProgressViewTotalIncrease
+                        }
+                        
                         lifterCompetitionsView
                     }
                     
@@ -90,6 +96,10 @@ struct OpenPowerliftingSearchView: View {
                     .modifier(CustomTextFieldModifier())
                     .overlay(ClearableTextFieldOverlay(text: $lifterName))
                     .onChange(of: lifterName) {
+                        if let lastChar = lifterName.last, !lastChar.isLetter && !lastChar.isNumber {
+                            return
+                        }
+                        
                         if lifterName.isEmpty {
                             viewModel.reset()
                         }
@@ -138,6 +148,10 @@ struct OpenPowerliftingSearchView: View {
                 .overlay(ClearableTextFieldOverlay(text: $lifterName))
                 .padding(.horizontal)
                 .onChange(of: lifterName) {
+                    if let lastChar = lifterName.last, !lastChar.isLetter && !lastChar.isNumber {
+                        return
+                    }
+                    
                     if lifterName.isEmpty {
                         viewModel.reset()
                     }
@@ -176,10 +190,10 @@ struct OpenPowerliftingSearchView: View {
         }
     }
     
-    private var lifterProgressView: some View {
+    private var lifterProgressViewPercentage: some View {
         Group {
             if let lifter = viewModel.lifters.first, lifter.competitions.count > 1 {
-                let (squat, bench, deadlift, total, dots) = calculateProgress(
+                let (squat, bench, deadlift, total, dots) = calculateProgressPercentage(
                     personalBests: lifter.personalBests, firstCompetition: lifter.firstCompetition
                 )
                 
@@ -191,6 +205,27 @@ struct OpenPowerliftingSearchView: View {
                         (label: "Deadlift", value: "\(deadlift)%"),
                         (label: "Total", value: "\(total)%"),
                         (label: "Dots", value: "\(dots)%")
+                    ]
+                )
+            }
+        }
+    }
+    
+    private var lifterProgressViewTotalIncrease: some View {
+        Group {
+            if let lifter = viewModel.lifters.first, lifter.competitions.count > 1 {
+                let (squat, bench, deadlift, total, dots) = calculateProgressTotalIncrease(
+                    personalBests: lifter.personalBests, firstCompetition: lifter.firstCompetition
+                )
+                
+                Card(
+                    title: "Progress",
+                    data: [
+                        (label: "Squat", value: "+\(formatValue(squat, decimals: 1))"),
+                        (label: "Bench", value: "+\(formatValue(bench, decimals: 1))"),
+                        (label: "Deadlift", value: "+\(formatValue(deadlift, decimals: 1))"),
+                        (label: "Total", value: "+\(formatValue(total, decimals: 1))"),
+                        (label: "Dots", value: "+\(dots)")
                     ]
                 )
             }
@@ -310,7 +345,7 @@ struct OpenPowerliftingSearchView: View {
         }
     }
     
-    private func calculateProgress(personalBests: PersonalBests, firstCompetition: FirstCompetition) -> (squat: Int, bench: Int, deadlift: Int, total: Int, dots: Int) {
+    private func calculateProgressPercentage(personalBests: PersonalBests, firstCompetition: FirstCompetition) -> (squat: Int, bench: Int, deadlift: Int, total: Int, dots: Int) {
         let bests = [personalBests.squat, personalBests.bench, personalBests.deadlift, personalBests.total, personalBests.dots]
         let firsts = [firstCompetition.squat, firstCompetition.bench, firstCompetition.deadlift, firstCompetition.total, firstCompetition.dots]
         
@@ -323,6 +358,23 @@ struct OpenPowerliftingSearchView: View {
             bench: progress[1],
             deadlift: progress[2],
             total: progress[3],
+            dots: progress[4]
+        )
+    }
+    
+    private func calculateProgressTotalIncrease(personalBests: PersonalBests, firstCompetition: FirstCompetition) -> (squat: Double, bench: Double, deadlift: Double, total: Double, dots: Double) {
+        let bests = [personalBests.squat, personalBests.bench, personalBests.deadlift, personalBests.total, personalBests.dots]
+        let firsts = [firstCompetition.squat, firstCompetition.bench, firstCompetition.deadlift, firstCompetition.total, firstCompetition.dots]
+        
+        let progress = zip(bests, firsts).map { best, first in
+            Double(best - first)
+        }
+        
+        return (
+            squat: pounds ? progress[0] * SettingsManager.lbsPerKg : progress[0],
+            bench: pounds ? progress[1] * SettingsManager.lbsPerKg : progress[1],
+            deadlift: pounds ? progress[2] * SettingsManager.lbsPerKg : progress[2],
+            total: pounds ? progress[3] * SettingsManager.lbsPerKg : progress[3],
             dots: progress[4]
         )
     }
