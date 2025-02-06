@@ -22,6 +22,7 @@ class SettingsManager: ObservableObject {
     
     static let progressCalculationTypePercentage = "percentage"
     static let progressCalculationTypeTotal = "total"
+    static let progressCalculationHide = "progressCalculationHide"
     
     static let lbsPerKg = 2.2046
     

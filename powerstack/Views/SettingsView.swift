@@ -63,8 +63,14 @@ struct SettingsView: View {
                         }
                         
                         Picker("Progress Calculation", selection: $progressCalculationType) {
-                            Text("Percentage").tag(SettingsManager.progressCalculationTypePercentage)
-                            Text("Total Increase").tag(SettingsManager.progressCalculationTypeTotal)
+                            Text("Percentage")
+                                .tag(SettingsManager.progressCalculationTypePercentage)
+                            
+                            Text("Total Increase")
+                                .tag(SettingsManager.progressCalculationTypeTotal)
+                            
+                            Text("Hide Completely")
+                                .tag(SettingsManager.progressCalculationHide)
                         }
                         .onAppear {
                             progressCalculationType = settings.progressCalculationType

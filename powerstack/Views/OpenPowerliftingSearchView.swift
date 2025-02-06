@@ -56,7 +56,7 @@ struct OpenPowerliftingSearchView: View {
                         
                         if settings.progressCalculationType == SettingsManager.progressCalculationTypePercentage {
                             lifterProgressViewPercentage
-                        } else {
+                        } else if settings.progressCalculationType == SettingsManager.progressCalculationTypeTotal {
                             lifterProgressViewTotalIncrease
                         }
                         
