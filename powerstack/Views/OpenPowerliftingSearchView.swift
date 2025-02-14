@@ -291,6 +291,7 @@ struct OpenPowerliftingSearchView: View {
                     let dots = String(format: "%.2f", competition.dots)
                     let placing = ordinal(of: competition.placing)
                     let placeEmoji = getPlaceEmoji(for: competition.placing)
+                    let successful = successfulAttemptsCount(for: competition)
 
                     HStack {
                         if formattedTotal == "0" {
@@ -299,6 +300,10 @@ struct OpenPowerliftingSearchView: View {
                                 .foregroundColor(.gray)
                         } else {
                             Text("\(formattedTotal) @ \(formattedBodyweight)")
+                                .font(.subheadline)
+                                .foregroundColor(.gray) +
+                            
+                            Text(", \(successful)")
                                 .font(.subheadline)
                                 .foregroundColor(.gray) +
                             
@@ -444,6 +449,15 @@ struct OpenPowerliftingSearchView: View {
         }.joined(separator: "/")
         
         return res.isEmpty ? "0/0/0" : res
+    }
+    
+    private func successfulAttemptsCount(for competition: Competition) -> String {
+        let allAttempts: [Double?] = competition.squatAttempts + competition.benchAttempts + competition.deadliftAttempts
+
+        let successfulCount = allAttempts.compactMap { $0 }.filter { $0 > 0 }.count
+        let totalCount = allAttempts.filter { $0 != nil }.count
+
+        return "\(successfulCount)/\(totalCount)"
     }
     
     private func getSuggestion() {
