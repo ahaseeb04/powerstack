@@ -466,8 +466,10 @@ struct OpenPowerliftingSearchView: View {
             return
         }
         
+        let normalized = lifterName.lowercased().diacriticInsensitive()
+        
         suggestion = viewModel.suggestions
-            .first { $0.lowercased().hasPrefix(lifterName.lowercased()) }
+            .first { $0.lowercased().diacriticInsensitive().hasPrefix(normalized) }
     }
 }
 
