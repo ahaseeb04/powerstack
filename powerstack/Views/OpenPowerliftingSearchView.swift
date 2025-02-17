@@ -488,6 +488,7 @@ class LifterViewModel: ObservableObject {
         }
         
         let formattedName = lifterName
+            .diacriticInsensitive()
             .replacingOccurrences(of: "[^a-zA-Z0-9]", with: "", options: .regularExpression)
             .lowercased()
         
